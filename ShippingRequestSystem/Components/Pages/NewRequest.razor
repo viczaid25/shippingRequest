@@ -1,0 +1,974 @@
+﻿@page "/requests/new"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.ViewModels
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@using Microsoft.AspNetCore.Components.Forms
+@inject IShippingRequestService RequestService
+@inject IPermissionService PermissionService
+@inject FileService FileService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Nueva Solicitud — Shipping Request System</PageTitle>
+
+<!-- Stepper -->
+<div class="stepper">
+    @for (int i = 0; i < _steps.Length; i++)
+    {
+        int idx = i;
+        string cls = idx < _step ? "done" : idx == _step ? "active" : "";
+        <div class="step-item @cls">
+            <div class="step-bubble">
+                @if (idx < _step)
+                {
+                    <span>✓</span>
+                }
+                else
+                {
+
+                    <span>@(idx + 1)</span>
+                }
+            </div>
+            <span class="step-label">@_steps[idx]</span>
+        </div>
+        @if (i < _steps.Length - 1)
+        {
+            <div class="step-line"></div>
+        }
+    }
+</div>
+
+<!-- PASO 0 — Datos del Solicitante -->
+@if (_step == 0)
+{
+    <FormSection Title="Datos del Solicitante" Icon="👤"
+                 Subtitle="Información de quien realiza la solicitud">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Nombre <span class="required">*</span></label>
+                <input type="text" class="field-input @(HasError("RequestorName") ? "invalid" : "")"
+                       placeholder="Nombre completo"
+                       @bind="_vm.RequestorName" @bind:event="oninput" />
+                @if (HasError("RequestorName"))
+                {
+                    <span class="field-error">El nombre es requerido</span>
+                }
+            </div>
+            <div class="field-group">
+                <label class="field-label">Email <span class="required">*</span></label>
+                <input type="email" class="field-input @(HasError("RequestorEmail") ? "invalid" : "")"
+                       placeholder="correo@empresa.com"
+                       @bind="_vm.RequestorEmail" @bind:event="oninput" />
+                @if (HasError("RequestorEmail"))
+                {
+                    <span class="field-error">El email es requerido</span>
+                }
+            </div>
+        </FieldRow>
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Departamento <span class="required">*</span></label>
+                <input type="text" class="field-input @(HasError("Department") ? "invalid" : "")"
+                       placeholder="Ej: Ingeniería, Operaciones..."
+                       @bind="_vm.Department" @bind:event="oninput" />
+                @if (HasError("Department"))
+                {
+                    <span class="field-error">El departamento es requerido</span>
+                }
+            </div>
+            <div class="field-group">
+                <label class="field-label">Unidad de Negocio <span class="required">*</span></label>
+                <input type="text" class="field-input @(HasError("BusinessUnit") ? "invalid" : "")"
+                       placeholder="Ej: MX Plant A"
+                       @bind="_vm.BusinessUnit" @bind:event="oninput" />
+                @if (HasError("BusinessUnit"))
+                {
+                    <span class="field-error">La unidad de negocio es requerida</span>
+                }
+        </div>
+    </FieldRow>
+    <FieldRow>
+        <div class="field-group">
+            <label class="field-label">Fecha</label>
+            <input type="date" class="field-input"
+                   value="@_vm.RequestDate.ToString("yyyy-MM-dd")"
+                   @onchange="e => _vm.RequestDate = string.IsNullOrEmpty(e.Value?.ToString())
+                                                         ? DateTime.Now
+                                                         : DateTime.Parse(e.Value.ToString()!)" />
+        </div>
+        <div class="field-group">
+            <label class="field-label">Manager / Supervisor <span class="required">*</span></label>
+            <input type="text" class="field-input @(HasError("UserManagerName") ? "invalid" : "")"
+                   placeholder="Nombre del manager"
+                   @bind="_vm.UserManagerName" @bind:event="oninput" />
+            @if (HasError("UserManagerName"))
+                {
+                    <span class="field-error">El nombre del manager es requerido</span>
+                }
+            </div>
+        </FieldRow>
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Email del Manager <span class="required">*</span></label>
+                <input type="email" class="field-input @(HasError("UserManagerEmail") ? "invalid" : "")"
+                       placeholder="manager@empresa.com"
+                       @bind="_vm.UserManagerEmail" @bind:event="oninput" />
+                @if (HasError("UserManagerEmail"))
+                {
+                    <span class="field-error">El email del manager es requerido</span>
+                }
+            </div>
+            <div></div>
+        </FieldRow>
+    </FormSection>
+
+    <FormSection Title="Tipo de Envío" Icon="🌐">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Alcance <span class="required">*</span></label>
+                <div class="radio-group">
+                    @foreach (var scope in Enum.GetValues<ShipmentScope>())
+                    {
+                        <span class="radio-chip @(_vm.Scope == scope ? "selected" : "")"
+                              @onclick="() => _vm.Scope = scope">@scope</span>
+                    }
+                </div>
+            </div>
+            <div class="field-group">
+                @if (_vm.Scope == ShipmentScope.Nacional)
+                {
+                    <label class="field-label">
+                        Categoría <span class="required">*</span>
+                    </label>
+                    <div class="radio-group">
+                        @foreach (var cat in Enum.GetValues<NationalShipmentCategory>())
+                        {
+                            <span class="radio-chip @(_vm.NationalCategory == cat ? "selected" : "")"
+                                  @onclick="() => _vm.NationalCategory = cat">@cat</span>
+                        }
+                    </div>
+                    @if (HasError("NationalCategory"))
+                    {
+                        <span class="field-error">Selecciona Compras o Adquisición</span>
+                    }
+                }
+                else
+                {
+                    <label class="field-label">Dirección <span class="required">*</span></label>
+                    <div class="radio-group">
+                        @foreach (var dir in Enum.GetValues<ShipmentDirection>())
+                        {
+                            <span class="radio-chip @(_vm.Direction == dir ? "selected" : "")"
+                                  @onclick="() => _vm.Direction = dir">@dir</span>
+                        }
+                    </div>
+                }
+            </div>
+        </FieldRow>
+    </FormSection>
+}
+
+<!-- PASO 1 — Comprador y Destinatario -->
+@if (_step == 1)
+{
+    <FormSection Title="Información del Comprador" Icon="🏢">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Razón Social</label>
+                <input type="text" class="field-input" placeholder="Nombre de la empresa"
+                       @bind="_vm.BuyerBusinessName" @bind:event="oninput" />
+            </div>
+            <div class="field-group">
+                <label class="field-label">Tax ID / RFC</label>
+                <input type="text" class="field-input" placeholder="RFC o Tax ID"
+                       @bind="_vm.BuyerTaxId" @bind:event="oninput" />
+            </div>
+        </FieldRow>
+        <FieldRow Full="true">
+            <div class="field-group">
+                <label class="field-label">Dirección</label>
+                <textarea class="field-textarea"
+                          placeholder="Calle, ciudad, estado, código postal, país"
+                          @bind="_vm.BuyerAddress" @bind:event="oninput"></textarea>
+            </div>
+        </FieldRow>
+    </FormSection>
+
+    <FormSection Title="Recolección / Destinatario" Icon="📍"
+                 Subtitle="Datos de quien recibe el envío">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Razón Social <span class="required">*</span></label>
+                <input type="text" class="field-input @(HasError("RecipientBusinessName") ? "invalid" : "")"
+                       placeholder="Nombre de la empresa"
+                       @bind="_vm.RecipientBusinessName" @bind:event="oninput" />
+                @if (HasError("RecipientBusinessName"))
+                {
+                    <span class="field-error">La razón social es requerida</span>
+                }
+            </div>
+            <div class="field-group">
+                <label class="field-label">Tax ID / RFC</label>
+                <input type="text" class="field-input" placeholder="RFC o Tax ID"
+                       @bind="_vm.RecipientTaxId" @bind:event="oninput" />
+            </div>
+        </FieldRow>
+        <FieldRow Full="true">
+            <div class="field-group">
+                <label class="field-label">Dirección <span class="required">*</span></label>
+                <textarea class="field-textarea @(HasError("RecipientAddress") ? "invalid" : "")"
+                          placeholder="Calle, ciudad, estado, código postal, país"
+                          @bind="_vm.RecipientAddress" @bind:event="oninput"></textarea>
+                @if (HasError("RecipientAddress"))
+                {
+                    <span class="field-error">La dirección es requerida</span>
+                }
+            </div>
+        </FieldRow>
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Atención a</label>
+                <input type="text" class="field-input" placeholder="Nombre de contacto"
+                       @bind="_vm.RecipientAttentionTo" @bind:event="oninput" />
+            </div>
+            <div class="field-group">
+                <label class="field-label">Teléfono</label>
+                <input type="text" class="field-input" placeholder="+52 xxx xxx xxxx"
+                       @bind="_vm.RecipientPhone" @bind:event="oninput" />
+            </div>
+        </FieldRow>
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Correo</label>
+                <input type="email" class="field-input" placeholder="contacto@empresa.com"
+                       @bind="_vm.RecipientEmail" @bind:event="oninput" />
+            </div>
+            <div></div>
+        </FieldRow>
+    </FormSection>
+}
+
+<!-- PASO 2 — Detalles de Envío -->
+@if (_step == 2)
+{
+    <FormSection Title="Detalles del Envío" Icon="🚢">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Vía de Envío</label>
+                <div class="radio-group">
+                    @foreach (var way in Enum.GetValues<ShippingWay>())
+                    {
+                        <span class="radio-chip @(_vm.ShippingWay == way ? "selected" : "")"
+                              @onclick="() => _vm.ShippingWay = way">
+                            @way.ToDisplayName()
+                        </span>
+                    }
+                </div>
+            </div>
+            <div class="field-group">
+                <label class="field-label">Tipo de Servicio</label>
+                <div class="radio-group">
+                    @foreach (var st in Enum.GetValues<ServiceType>())
+                    {
+                        <span class="radio-chip @(_vm.ServiceType == st ? "selected" : "")"
+                              @onclick="() => _vm.ServiceType = st">
+                            @st.ToDisplayName()
+                        </span>
+                    }
+            </div>
+        </div>
+    </FieldRow>
+    <FieldRow>
+        <div class="field-group">
+            <label class="field-label">Fecha de Entrega</label>
+            <input type="date" class="field-input"
+                   value="@_vm.DeliveryDate?.ToString("yyyy-MM-dd")"
+                   @onchange="e => _vm.DeliveryDate = string.IsNullOrEmpty(e.Value?.ToString())
+                                                         ? null
+                                                         : DateTime.Parse(e.Value.ToString()!)" />
+        </div>
+        <div></div>
+    </FieldRow>
+    <FieldRow Full="true">
+        <div class="field-group">
+            <label class="field-label">Propósito del Envío <span class="required">*</span></label>
+            <textarea class="field-textarea @(HasError("ShipmentPurpose") ? "invalid" : "")"
+                      placeholder="Describe el motivo del envío..."
+                      @bind="_vm.ShipmentPurpose" @bind:event="oninput"></textarea>
+            @if (HasError("ShipmentPurpose"))
+                {
+                    <span class="field-error">El propósito del envío es requerido</span>
+                }
+            </div>
+        </FieldRow>
+    </FormSection>
+
+    <FormSection Title="Información de Factura" Icon="🧾">
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Tipo de Factura</label>
+                <div class="radio-group">
+                    @foreach (var t in Enum.GetValues<InvoiceType>())
+                    {
+                        <span class="radio-chip @(_vm.InvoiceType == t ? "selected" : "")"
+                              @onclick="() => _vm.InvoiceType = t">@t</span>
+                    }
+                </div>
+            </div>
+            <div class="field-group">
+                <label class="field-label">Tipo de Operación</label>
+                <div class="radio-group">
+                    @foreach (var op in Enum.GetValues<OperationType>())
+                    {
+                        <span class="radio-chip @(_vm.OperationType == op ? "selected" : "")"
+                              @onclick="() => _vm.OperationType = op">@op</span>
+                    }
+                </div>
+            </div>
+        </FieldRow>
+        <FieldRow Full="true">
+            <div class="field-group">
+                <label class="field-label">
+                    Tramos de Flete Aplicables <span class="required">*</span>
+                </label>
+                <div class="radio-group">
+                    <span class="radio-chip @(_vm.RequiresLocalOriginFreight ? "selected" : "")"
+                          @onclick="() => _vm.RequiresLocalOriginFreight = !_vm.RequiresLocalOriginFreight">
+                        Flete Local Origen
+                    </span>
+                    <span class="radio-chip @(_vm.RequiresLocalDestinationFreight ? "selected" : "")"
+                          @onclick="() => _vm.RequiresLocalDestinationFreight = !_vm.RequiresLocalDestinationFreight">
+                        Flete Local Destino
+                    </span>
+                    <span class="radio-chip @(_vm.RequiresInternationalFreight ? "selected" : "")"
+                          @onclick="() => _vm.RequiresInternationalFreight = !_vm.RequiresInternationalFreight">
+                        Flete Internacional
+                    </span>
+                </div>
+                @if (HasError("Freight"))
+                {
+                    <span class="field-error">Selecciona al menos un tramo de flete</span>
+                }
+                <div style="font-size:0.78rem;color:#64748b;margin-top:0.4rem;">
+                    El equipo de Trade Staff determinará el Incoterm aplicable con base en
+                    esta selección.
+                </div>
+            </div>
+        </FieldRow>
+        @if (_vm.Scope == ShipmentScope.Internacional && _vm.Direction == ShipmentDirection.Import)
+        {
+            <FieldRow>
+                <div class="field-group">
+                    <label class="field-label">Número de Factura</label>
+                    <input type="text" class="field-input" placeholder="INV-0001"
+                           @bind="_vm.InvoiceNumber" @bind:event="oninput" />
+                </div>
+                <div></div>
+            </FieldRow>
+        }
+        <div style="font-size:0.82rem;color:#64748b;">
+            ℹ️ El Certificado de Origen (COO), si aplica, lo determina y sube Trade Staff
+            durante su revisión.
+        </div>
+    </FormSection>
+
+    <FormSection Title="Opciones Logísticas" Icon="⚙️">
+        <div style="margin-bottom:0.85rem;">
+            <label class="field-label">
+                ¿Es Estibable? <span class="required">*</span>
+            </label>
+            <div style="margin-top:0.4rem;">
+                <div class="radio-group">
+                    <span class="radio-chip @(_stackableSelected && _vm.IsStackable ? "selected" : "")"
+                          style="@(_stackableSelected && !_vm.IsStackable ? "opacity:0.5" : "")"
+                          @onclick="() => { _vm.IsStackable = true; _stackableSelected = true; _showStackableError = false; }">
+                        ✅ Sí — La carga puede apilarse
+                    </span>
+                    <span class="radio-chip @(_stackableSelected && !_vm.IsStackable ? "selected" : "")"
+                          style="@(_stackableSelected && _vm.IsStackable ? "opacity:0.5" : "")"
+                          @onclick="() => { _vm.IsStackable = false; _stackableSelected = true; _showStackableError = false; }">
+                        ❌ No — No debe apilarse
+                    </span>
+                </div>
+                @if (_showStackableError)
+                {
+                    <span class="field-error">Debe indicar si la carga es estibable o no</span>
+                }
+            </div>
+        </div>
+
+        <div class="toggle-row @(_vm.HasInsurance ? "checked" : "")"
+             @onclick="() => _vm.HasInsurance = !_vm.HasInsurance">
+            <input type="checkbox" checked="@_vm.HasInsurance" style="accent-color:#1d4ed8;" />
+            <div>
+                <div class="toggle-label">Seguro de Envío</div>
+                <div class="toggle-desc">¿Requiere seguro para este envío?</div>
+            </div>
+        </div>
+
+        <FieldRow>
+            <div class="field-group">
+                <label class="field-label">Responsabilidad de Pago</label>
+                <div class="radio-group">
+                    @foreach (var pr in Enum.GetValues<PaymentResponsibility>())
+                    {
+                        <span class="radio-chip @(_vm.PaymentResponsibility == pr ? "selected" : "")"
+                              @onclick="() => _vm.PaymentResponsibility = pr">@pr</span>
+                    }
+                </div>
+            </div>
+            @if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver)
+            {
+                <div class="field-group">
+                    <label class="field-label">Parcel Account</label>
+                    <input type="text" class="field-input"
+                           placeholder="Número de cuenta del receptor"
+                           @bind="_vm.ParcelAccount" @bind:event="oninput" />
+                </div>
+            }
+        </FieldRow>
+        @if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver)
+        {
+            <FieldRow>
+                <div class="field-group">
+                    <label class="field-label">Paquetería</label>
+                    <div class="radio-group">
+                        @foreach (var c in Enum.GetValues<ParcelCarrier>())
+                        {
+                            <span class="radio-chip @(_vm.Carrier == c ? "selected" : "")"
+                                  @onclick="() => _vm.Carrier = c">@c</span>
+                        }
+                    </div>
+                </div>
+                <div></div>
+            </FieldRow>
+        }
+    </FormSection>
+}
+
+<!-- PASO 3 — Paquetes e Items -->
+@if (_step == 3)
+{
+    <FormSection Title="Paquetes e Items" Icon="📦"
+                 Subtitle="Agrega pallets, cajas e items del envío">
+        <PackageBuilder Packages="_vm.Packages" OnChanged="StateHasChanged" />
+    </FormSection>
+}
+
+<!-- PASO 4 — Evidencias Fotográficas -->
+@if (_step == 4)
+{
+    <FormSection Title="Evidencias Fotográficas" Icon="📷"
+                 Subtitle="Sube las 4 fotografías requeridas antes de continuar">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+            @foreach (var slot in _evidenceSlots)
+            {
+                <div class="field-group">
+                    <label class="field-label">
+                        @slot.Label <span class="required">*</span>
+                    </label>
+                    @if (slot.File is not null || !string.IsNullOrEmpty(slot.GetPath()))
+                    {
+                        <div style="display:flex;align-items:center;gap:0.75rem;
+                                    padding:0.75rem 1rem;background:#f0fdf4;
+                                    border:1.5px solid #86efac;border-radius:12px;">
+                            <span style="font-size:1.2rem;">🖼️</span>
+                            <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+                                        white-space:nowrap;font-weight:700;color:#15803d;
+                                        font-size:0.85rem;">
+                                @(slot.File?.Name ?? "Foto cargada")
+                            </div>
+                            <button type="button" class="pkg-btn del"
+                                    style="padding:0.3rem 0.65rem;"
+                                    @onclick="() => ClearEvidence(slot)">
+                                Cambiar
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="border:2px dashed @(slot.Error != null ? "#fca5a5" : "#cbd5e1");
+                                    border-radius:12px;padding:1rem;text-align:center;background:#fff;">
+                            <InputFile OnChange="e => OnEvidenceSelected(e, slot)"
+                                       accept=".jpg,.jpeg,.png"
+                                       style="display:none;"
+                                       id="@($"evidence-{slot.Key}")" />
+                            <label for="@($"evidence-{slot.Key}")"
+                                   style="display:inline-flex;align-items:center;gap:0.4rem;
+                                          padding:0.5rem 1.1rem;border-radius:10px;background:#eff6ff;
+                                          color:#1d4ed8;font-weight:700;font-size:0.84rem;
+                                          cursor:pointer;border:1.5px solid #bfdbfe;">
+                                📂 Seleccionar Foto
+                            </label>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(slot.Error))
+                    {
+                        <span class="field-error">@slot.Error</span>
+                    }
+                </div>
+            }
+        </div>
+    </FormSection>
+}
+
+<!-- PASO 5 — Observaciones -->
+@if (_step == 5)
+{
+    <FormSection Title="Observaciones del Solicitante" Icon="💬">
+        <FieldRow Full="true">
+            <div class="field-group">
+                <label class="field-label">Observaciones</label>
+                <textarea class="field-textarea"
+                          placeholder="Notas o comentarios adicionales..."
+                          @bind="_vm.RequestorObservations" @bind:event="oninput"></textarea>
+            </div>
+        </FieldRow>
+        <FieldRow Full="true">
+            <div class="field-group">
+                <label class="field-label">Folio Baja de Material (MX-7104-F1)</label>
+                <input type="text" class="field-input" placeholder="MX-7104-F1-XXXX"
+                       value="@_vm.MaterialBajaFolio"
+                       @oninput="OnFolioInput" />
+            </div>
+        </FieldRow>
+
+        @if (string.IsNullOrWhiteSpace(_vm.MaterialBajaFolio))
+        {
+            <FieldRow Full="true">
+                <div class="field-group"
+                     style="background:#fefce8;border:1.5px solid #fde047;
+                                    border-radius:14px;padding:1rem;">
+                    <label class="field-label" style="color:#854d0e;">
+                        ⚠️ Motivo por el que no aplica el Folio
+                        <span class="required">*</span>
+                    </label>
+                    <textarea class="field-textarea"
+                              placeholder="Explica por qué no se cuenta con el folio..."
+                              style="border-color:#fde047;background:#fff;"
+                              @bind="_vm.FolioJustification"
+                              @bind:event="oninput"></textarea>
+                    @if (_showFolioError)
+                    {
+                        <span class="field-error">Debes explicar por qué no aplica el folio</span>
+                    }
+                </div>
+            </FieldRow>
+        }
+    </FormSection>
+
+    <div style="padding:1rem 1.25rem;background:#eff6ff;border:1.5px solid #bfdbfe;
+                    border-radius:16px;display:flex;align-items:flex-start;gap:0.85rem;">
+        <span style="font-size:1.3rem;flex-shrink:0;">ℹ️</span>
+        <div>
+            <div style="font-weight:800;color:#1e3a8a;font-size:0.92rem;">IGI y Costo de Envío</div>
+            <div style="font-size:0.84rem;color:#3b82f6;margin-top:0.2rem;">
+                El porcentaje de IGI y el costo del envío serán determinados por el equipo de
+                Trade Staff. Ellos subirán 3 cotizaciones para que puedas elegir la más conveniente.
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Navegación -->
+<div class="form-nav">
+    <span class="form-nav-info">Paso @(_step + 1) de @_steps.Length</span>
+    <div style="display:flex;gap:0.75rem;">
+        @if (_step > 0)
+        {
+            <button type="button" class="btn-nav prev" @onclick="PrevStep">← Anterior</button>
+        }
+        @if (_step < _steps.Length - 1)
+        {
+            <button type="button" class="btn-nav next" @onclick="NextStep">Siguiente →</button>
+        }
+        else
+        {
+            <button type="button" class="btn-nav submit"
+                    disabled="@_submitting" @onclick="HandleSubmit">
+                @if (_submitting)
+                {
+                    <span>Guardando...</span>
+                }
+                else
+                {
+
+                    <span>✓ Enviar Solicitud</span>
+                }
+            </button>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_errorMsg))
+{
+    <div style="margin-top:1rem;padding:1rem;background:#fef2f2;border:1px solid #fecaca;
+                    border-radius:14px;color:#dc2626;font-weight:700;">
+        ⚠️ @_errorMsg
+    </div>
+}
+
+<ValidationModal Visible="_showWeightModal" Title="Peso inválido"
+                 Message="@_weightModalMessage"
+                 OnClose="() => _showWeightModal = false" />
+
+@code {
+    private ShippingRequestViewModel _vm = new();
+    private int? _draftId;
+    private int _step = 0;
+    private bool _submitting = false;
+    private string _errorMsg = string.Empty;
+
+    private bool _stackableSelected = false;
+    private bool _showStackableError = false;
+    private bool _showFolioError = false;
+    private bool _showWeightModal = false;
+    private string _weightModalMessage = string.Empty;
+
+    private HashSet<string> _errors = new();
+    private List<EvidenceSlot> _evidenceSlots = new();
+
+    private readonly string[] _steps =
+    {
+        "Solicitante", "Direcciones", "Envío", "Paquetes", "Evidencias", "Observaciones"
+    };
+
+    private class EvidenceSlot
+    {
+        public string Key { get; init; } = string.Empty;
+        public string Label { get; init; } = string.Empty;
+        public Func<string?> GetPath { get; init; } = () => null;
+        public Action<string?> SetPath { get; init; } = _ => { };
+        public IBrowserFile? File { get; set; }
+        public string? Error { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Buscar al usuario logueado en meax_all_user por su login de red
+        // CurrentUser.Username contiene el pc_login_id (ej: DM45207)
+        var meaxUser = await PermissionService
+            .GetUserByLoginAsync(CurrentUser.Username);
+
+        if (meaxUser is not null)
+        {
+            // Llenar con datos de la BD
+            _vm.RequestorName = meaxUser.Username ?? CurrentUser.DisplayName;
+            _vm.RequestorEmail = meaxUser.Email ?? CurrentUser.Email;
+            _vm.Department = meaxUser.Department ?? CurrentUser.Department;
+
+            // BusinessUnit desde dep_2 si existe, si no desde department
+            _vm.BusinessUnit = !string.IsNullOrEmpty(meaxUser.Dep2)
+                                 ? meaxUser.Dep2
+                                 : meaxUser.Department ?? string.Empty;
+        }
+        else
+        {
+            // Fallback: usar datos de los claims de AD
+            _vm.RequestorName = CurrentUser.DisplayName;
+            _vm.RequestorEmail = CurrentUser.Email;
+            _vm.Department = CurrentUser.Department;
+        }
+
+        // Si el solicitante ya tenía un borrador sin terminar, retomarlo donde se quedó
+        var draft = await RequestService.GetDraftForUserAsync(_vm.RequestorEmail);
+        if (draft is not null)
+        {
+            _draftId = draft.Id;
+            _vm = MapToViewModel(draft);
+            _step = Math.Clamp(draft.DraftStep, 0, _steps.Length - 1);
+            _stackableSelected = true;
+        }
+
+        InitEvidenceSlots();
+    }
+
+    private void InitEvidenceSlots()
+    {
+        _evidenceSlots = new List<EvidenceSlot>
+        {
+            new() { Key = "net", Label = "Peso Neto",
+                    GetPath = () => _vm.EvidenceNetWeightPhotoPath,
+                    SetPath = v => _vm.EvidenceNetWeightPhotoPath = v },
+            new() { Key = "gross", Label = "Peso Bruto",
+                    GetPath = () => _vm.EvidenceGrossWeightPhotoPath,
+                    SetPath = v => _vm.EvidenceGrossWeightPhotoPath = v },
+            new() { Key = "dims", Label = "Dimensiones",
+                    GetPath = () => _vm.EvidenceDimensionsPhotoPath,
+                    SetPath = v => _vm.EvidenceDimensionsPhotoPath = v },
+            new() { Key = "final", Label = "Empaque Final",
+                    GetPath = () => _vm.EvidenceFinalPackagingPhotoPath,
+                    SetPath = v => _vm.EvidenceFinalPackagingPhotoPath = v },
+        };
+    }
+
+    private static List<PackageViewModel> MapPackages(IEnumerable<ShippingPackage> packages) =>
+        packages.Select(p => new PackageViewModel
+        {
+            PackageType = p.PackageType,
+            Label = p.Label ?? string.Empty,
+            GrossWeight = p.GrossWeight,
+            Length = p.Length,
+            Width = p.Width,
+            Height = p.Height,
+            ChildBoxes = MapPackages(p.ChildBoxes),
+            Items = p.Items.Select(i => new ItemViewModel
+            {
+                PartNumber = i.PartNumber,
+                Class = i.Class,
+                Description = i.Description,
+                Quantity = i.Quantity,
+                UOM = i.UOM,
+                NetWeight = i.NetWeight,
+                GrossWeight = i.GrossWeight,
+                Length = i.Length,
+                Width = i.Width,
+                Height = i.Height,
+                UnitPrice = i.UnitPrice
+            }).ToList()
+        }).ToList();
+
+    private static ShippingRequestViewModel MapToViewModel(ShippingRequest r) => new()
+    {
+        RequestorName = r.RequestorName,
+        RequestorEmail = r.RequestorEmail,
+        Department = r.Department,
+        BusinessUnit = r.BusinessUnit,
+        RequestDate = r.RequestDate,
+        Direction = r.Direction,
+        Scope = r.Scope,
+        NationalCategory = r.NationalCategory,
+        BuyerBusinessName = r.BuyerBusinessName,
+        BuyerAddress = r.BuyerAddress,
+        BuyerTaxId = r.BuyerTaxId,
+        RecipientBusinessName = r.RecipientBusinessName ?? string.Empty,
+        RecipientAddress = r.RecipientAddress ?? string.Empty,
+        RecipientTaxId = r.RecipientTaxId,
+        RecipientAttentionTo = r.RecipientAttentionTo,
+        RecipientPhone = r.RecipientPhone,
+        RecipientEmail = r.RecipientEmail,
+        ShippingWay = r.ShippingWay,
+        ServiceType = r.ServiceType,
+        DeliveryDate = r.DeliveryDate,
+        ShipmentPurpose = r.ShipmentPurpose ?? string.Empty,
+        InvoiceType = r.InvoiceType,
+        RequiresLocalOriginFreight = r.RequiresLocalOriginFreight,
+        RequiresLocalDestinationFreight = r.RequiresLocalDestinationFreight,
+        RequiresInternationalFreight = r.RequiresInternationalFreight,
+        Incoterm = r.Incoterm,
+        InvoiceNumber = r.InvoiceNumber,
+        IsStackable = r.IsStackable,
+        PaymentResponsibility = r.PaymentResponsibility,
+        ParcelAccount = r.ParcelAccount,
+        Carrier = r.Carrier,
+        HasInsurance = r.HasInsurance,
+        RequestorObservations = r.RequestorObservations,
+        MaterialBajaFolio = r.MaterialBajaFolio,
+        EvidenceNetWeightPhotoPath = r.EvidenceNetWeightPhotoPath,
+        EvidenceGrossWeightPhotoPath = r.EvidenceGrossWeightPhotoPath,
+        EvidenceDimensionsPhotoPath = r.EvidenceDimensionsPhotoPath,
+        EvidenceFinalPackagingPhotoPath = r.EvidenceFinalPackagingPhotoPath,
+        UserManagerName = r.UserManagerName ?? string.Empty,
+        UserManagerEmail = r.UserManagerEmail ?? string.Empty,
+        Packages = MapPackages(r.Packages.Where(p => p.ParentPalletId is null))
+    };
+
+    private bool HasError(string field) => _errors.Contains(field);
+
+    private void OnFolioInput(ChangeEventArgs e)
+    {
+        _vm.MaterialBajaFolio = e.Value?.ToString();
+        _showFolioError = false;
+        StateHasChanged();
+    }
+
+    private async Task OnEvidenceSelected(InputFileChangeEventArgs e, EvidenceSlot slot)
+    {
+        var file = e.File;
+        slot.Error = null;
+        if (file is null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+        {
+            slot.Error = "Solo se permiten imágenes JPG o PNG.";
+            return;
+        }
+
+        const long maxSize = 8 * 1024 * 1024;
+        if (file.Size > maxSize)
+        {
+            slot.Error = "La imagen excede el tamaño máximo de 8 MB.";
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(maxSize);
+            var saved = await FileService.SaveEvidenceImageAsync(stream, file.Name, file.Size);
+            slot.File = file;
+            slot.SetPath(saved.filePath);
+        }
+        catch (Exception ex)
+        {
+            slot.Error = $"Error al subir la imagen: {ex.Message}";
+        }
+    }
+
+    private void ClearEvidence(EvidenceSlot slot)
+    {
+        slot.File = null;
+        slot.SetPath(null);
+        slot.Error = null;
+    }
+
+    private static IEnumerable<ItemViewModel> FlattenItems(List<PackageViewModel> packages)
+    {
+        foreach (var pkg in packages)
+        {
+            foreach (var item in pkg.Items) yield return item;
+            foreach (var item in FlattenItems(pkg.ChildBoxes)) yield return item;
+        }
+    }
+
+    private bool ValidateWeights()
+    {
+        bool invalid = FlattenItems(_vm.Packages)
+            .Any(i => i.GrossWeight > 0 && i.NetWeight >= i.GrossWeight);
+
+        if (invalid)
+        {
+            _weightModalMessage = "El peso neto material sin empaque y peso bruto material con empaque";
+            _showWeightModal = true;
+            return false;
+        }
+        return true;
+    }
+
+    private bool ValidateStep(int step)
+    {
+        _errors.Clear();
+
+        switch (step)
+        {
+            case 0:
+                if (string.IsNullOrWhiteSpace(_vm.RequestorName))
+                    _errors.Add("RequestorName");
+                if (string.IsNullOrWhiteSpace(_vm.RequestorEmail))
+                    _errors.Add("RequestorEmail");
+                if (string.IsNullOrWhiteSpace(_vm.Department))
+                    _errors.Add("Department");
+                if (string.IsNullOrWhiteSpace(_vm.BusinessUnit))
+                    _errors.Add("BusinessUnit");
+                if (string.IsNullOrWhiteSpace(_vm.UserManagerName))
+                    _errors.Add("UserManagerName");
+                if (string.IsNullOrWhiteSpace(_vm.UserManagerEmail))
+                    _errors.Add("UserManagerEmail");
+                if (_vm.Scope == ShipmentScope.Nacional && _vm.NationalCategory is null)
+                    _errors.Add("NationalCategory");
+                break;
+
+            case 1:
+                if (string.IsNullOrWhiteSpace(_vm.RecipientBusinessName))
+                    _errors.Add("RecipientBusinessName");
+                if (string.IsNullOrWhiteSpace(_vm.RecipientAddress))
+                    _errors.Add("RecipientAddress");
+                break;
+
+            case 2:
+                if (string.IsNullOrWhiteSpace(_vm.ShipmentPurpose))
+                    _errors.Add("ShipmentPurpose");
+                if (!_vm.RequiresLocalOriginFreight &&
+                    !_vm.RequiresLocalDestinationFreight &&
+                    !_vm.RequiresInternationalFreight)
+                    _errors.Add("Freight");
+                _showStackableError = !_stackableSelected;
+                break;
+
+            case 4:
+                foreach (var slot in _evidenceSlots)
+                {
+                    if (string.IsNullOrEmpty(slot.GetPath()))
+                    {
+                        slot.Error = "Esta foto es requerida.";
+                        _errors.Add($"Evidence_{slot.Key}");
+                    }
+                    else
+                    {
+                        slot.Error = null;
+                    }
+                }
+                break;
+
+            case 5:
+                _showFolioError =
+                    string.IsNullOrWhiteSpace(_vm.MaterialBajaFolio) &&
+                    string.IsNullOrWhiteSpace(_vm.FolioJustification);
+                break;
+        }
+
+        if (step == 2 && _showStackableError) return false;
+        if (step == 5 && _showFolioError) return false;
+
+        return _errors.Count == 0;
+    }
+
+    private async Task NextStep()
+    {
+        if (!ValidateStep(_step)) return;
+        if (_step == 3 && !ValidateWeights()) return;
+        if (_step < _steps.Length - 1) _step++;
+        await AutoSaveDraftAsync();
+    }
+
+    private void PrevStep()
+    {
+        _errors.Clear();
+        if (_step > 0) _step--;
+    }
+
+    private async Task AutoSaveDraftAsync()
+    {
+        try
+        {
+            _draftId = await RequestService.SaveDraftAsync(_vm, _draftId, _step);
+        }
+        catch
+        {
+            // Autoguardado best-effort: no debe bloquear el avance del wizard.
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!ValidateStep(_step)) return;
+        if (!ValidateWeights()) return;
+
+        if (string.IsNullOrWhiteSpace(_vm.MaterialBajaFolio) &&
+            !string.IsNullOrWhiteSpace(_vm.FolioJustification))
+        {
+            _vm.RequestorObservations = string.IsNullOrWhiteSpace(_vm.RequestorObservations)
+                ? $"[Sin folio baja de material] Motivo: {_vm.FolioJustification}"
+                : $"{_vm.RequestorObservations}\n[Sin folio baja de material] " +
+                  $"Motivo: {_vm.FolioJustification}";
+        }
+
+        _submitting = true;
+        _errorMsg = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var request = await RequestService.CreateAsync(_vm, _draftId);
+            Nav.NavigateTo($"/requests/{request.Id}");
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Error al guardar: {ex.Message}";
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+}

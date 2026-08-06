@@ -1,0 +1,25 @@
+﻿@rendermode InteractiveServer
+
+<div class="sidebar @(_collapsed ? "collapsed" : "")">
+    <div class="top-row">
+        @if (!_collapsed)
+        {
+            <a class="navbar-brand" href="/">🚚 ShipRequest</a>
+        }
+        else
+        {
+            <span></span>
+        }
+        <button class="sidebar-toggle-btn" @onclick="ToggleNav"
+                title="@(_collapsed ? "Expandir menú" : "Colapsar menú")">
+            <i class="bi @(_collapsed ? "bi-layout-sidebar" : "bi-layout-sidebar-inset")"></i>
+        </button>
+    </div>
+    <NavMenu Collapsed="_collapsed" />
+</div>
+
+@code {
+    private bool _collapsed = false;
+
+    private void ToggleNav() => _collapsed = !_collapsed;
+}

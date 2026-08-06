@@ -1,0 +1,11 @@
+﻿<div class="info-row">
+    <span class="info-row-label">@Label</span>
+    <span class="info-row-value @(string.IsNullOrEmpty(Value) ? "empty" : "")">
+        @(string.IsNullOrEmpty(Value) ? "—" : Value)
+    </span>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Value { get; set; }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ShippingRequestSystem",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "ShippingRequestSystem/ShippingRequestSystem.csproj", "--urls", "http://localhost:5231"],
+      "port": 5231
+    }
+  ]
+}

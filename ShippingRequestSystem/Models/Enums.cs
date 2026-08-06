@@ -1,0 +1,33 @@
+﻿namespace ShippingRequestSystem.Models;
+
+public enum ShipmentDirection { Export, Import }
+public enum ShipmentScope { Nacional, Internacional }
+public enum NationalShipmentCategory { Compras, Adquisicion }
+public enum ShippingWay { Maritimo, Terrestre, Aereo }
+public enum ServiceType { Urgente, Economico }
+public enum InvoiceType { Comercial, Traslado }
+public enum OperationType { A1, RT }
+public enum PaymentResponsibility { Meax, Receiver }
+public enum RequestStatus
+{
+    Draft,
+    PendingTradeStaffQuotes,     // Staff sube IGI + cotizaciones
+    PendingUserQuoteSelection,   // Usuario elige cotización
+    PendingPremiumFreight,       // Usuario llena Premium Freight (si ≥$5000)
+    PendingTradeStaffApproval,   // Staff aprueba formalmente tras elegir cotización
+    PendingTradeCoordinator,
+    PendingTradeManager,
+    PendingUserManager,
+    PendingProcurementManager,
+    PendingSalesManager,
+    PendingFinanceManager,
+    PendingPresident,
+    Approved,
+    Rejected
+}
+public enum PackageType { Pallet, Box }
+public enum PremiumFreightDirection { Import, Export, Local }
+public enum PremiumFreightScope { Nacional, America, Europa, Asia, Otro }
+public enum PremiumFreightTransport { AirFreight, LandFreight, SeaFreight, Charter, Otro }
+public enum PremiumFreightPayment { PaidByMeax, ReimbursableBySupplier, ReimbursableByClient }
+public enum ParcelCarrier { SHL, FedEx, UPS, DHL, Otro }

@@ -1,0 +1,124 @@
+﻿@inject NavigationManager NavigationManager
+@inject CurrentUserService CurrentUser
+@inject IPermissionService PermissionService
+
+<div class="nav-scrollable">
+    <nav class="nav-shell px-3">
+
+        @if (!Collapsed)
+        {
+            <div class="nav-section-title">Principal</div>
+        }
+
+        <div class="nav-item">
+            <NavLink class="@NavLinkClass" href="" Match="NavLinkMatch.All"
+                     title="Dashboard">
+                <i class="bi bi-house-door-fill"></i>
+                @if (!Collapsed)
+                {
+                    <span>Dashboard</span>
+                }
+            </NavLink>
+        </div>
+
+        @if (!Collapsed)
+        {
+            <div class="nav-section-title">Solicitudes</div>
+        }
+
+        <div class="nav-item">
+            <NavLink class="@NavLinkClass" href="requests/new"
+                     title="Nueva Solicitud">
+                <i class="bi bi-plus-circle-fill"></i>
+                @if (!Collapsed)
+                {
+                    <span>Nueva Solicitud</span>
+                }
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
+            <NavLink class="@NavLinkClass" href="requests"
+                     title="Mis Solicitudes">
+                <i class="bi bi-list-ul"></i>
+                @if (!Collapsed)
+                {
+                    <span>Mis Solicitudes</span>
+                }
+            </NavLink>
+        </div>
+
+        @if (!Collapsed)
+        {
+            <div class="nav-section-title">Aprobaciones</div>
+        }
+
+        <div class="nav-item">
+            <NavLink class="@NavLinkClass" href="approvals"
+                     title="Pendientes">
+                <i class="bi bi-check2-circle"></i>
+                @if (!Collapsed)
+                {
+                    <span>Pendientes</span>
+                }
+            </NavLink>
+        </div>
+
+        @if (_isAdmin)
+        {
+            @if (!Collapsed)
+            {
+                <div class="nav-section-title">Sistema</div>
+            }
+            <div class="nav-item">
+                <NavLink class="@NavLinkClass" href="admin"
+                         title="Administración">
+                    <i class="bi bi-gear-fill"></i>
+                    @if (!Collapsed)
+                    {
+                        <span>Administración</span>
+                    }
+                </NavLink>
+            </div>
+        }
+
+        @if (!Collapsed)
+        {
+            <div class="nav-user-box">
+                <div class="nav-user-label">Usuario Activo</div>
+                <div class="nav-user-name">
+                    @CurrentUser.DisplayName<br />
+                    <span style="font-size:0.75rem;font-weight:500;
+                                     color:rgba(255,255,255,0.55);">
+                        @CurrentUser.Email
+                    </span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="nav-user-avatar">
+                <div class="nav-user-avatar-circle"
+                     title="@CurrentUser.DisplayName">
+                    @(CurrentUser.DisplayName.Length >= 2
+                                    ? CurrentUser.DisplayName[..2].ToUpper() : "?")
+            </div>
+        </div>
+                }
+
+    </nav>
+</div>
+
+@code {
+    [Parameter] public bool Collapsed { get; set; }
+
+    private bool _isAdmin = false;
+    private string NavLinkClass =>
+        Collapsed ? "nav-link nav-link--icon-only" : "nav-link";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(CurrentUser.Email))
+            _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+    }
+}

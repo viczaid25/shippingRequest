@@ -1,0 +1,154 @@
+﻿@page "/"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@inject IShippingRequestService RequestService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard — Shipping Request System</PageTitle>
+
+<div class="index-page">
+
+    <!-- Hero -->
+    <div class="index-hero">
+        <div class="index-hero-left">
+            <div class="index-kicker">🚚 Shipping Request System</div>
+            <h1>Control de<br />Envíos</h1>
+            <p class="hero-text">
+                Gestiona solicitudes de importación y exportación, da seguimiento
+                al flujo de aprobaciones y mantén trazabilidad completa de cada envío.
+            </p>
+            <div class="hero-meta">
+                <span class="meta-chip">📦 Paquetes inteligentes</span>
+                <span class="meta-chip">✅ Flujo de aprobación</span>
+                <span class="meta-chip">⭐ Premium Freight</span>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a href="/requests/new" class="hero-btn primary">+ Nueva Solicitud</a>
+            <a href="/requests" class="hero-btn">Ver Mis Solicitudes</a>
+            <a href="/approvals" class="hero-btn">Aprobaciones Pendientes</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    @if (_loading)
+    {
+        <div class="index-loading">
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="index-skeleton skeleton-card"></div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span>Total Solicitudes</span>
+                <strong>@_all.Count</strong>
+                <p>Solicitudes registradas en el sistema</p>
+            </div>
+            <div class="stat-card">
+                <span>En Proceso</span>
+                <strong style="color:#d97706;">@_inProgress</strong>
+                <p>Pendientes de aprobación</p>
+            </div>
+            <div class="stat-card">
+                <span>Aprobadas</span>
+                <strong style="color:#16a34a;">@_approved</strong>
+                <p>Listas para procesar</p>
+            </div>
+            <div class="stat-card">
+                <span>Premium Freight</span>
+                <strong style="color:#7c3aed;">@_premium</strong>
+                <p>Solicitudes ≥ $5,000 USD</p>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="index-grid">
+            <!-- Acciones rápidas -->
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2>Acciones Rápidas</h2>
+                        <p class="panel-subtitle">Operaciones frecuentes</p>
+                    </div>
+                </div>
+                <div class="quick-actions">
+                    <a href="/requests/new" class="quick-card primary">
+                        <span>Nueva</span>
+                        <strong>Crear Solicitud de Envío</strong>
+                        <p>Captura una nueva solicitud con todos los detalles del envío</p>
+                    </a>
+                    <a href="/approvals" class="quick-card">
+                        <span>Pendiente</span>
+                        <strong>Revisar Aprobaciones</strong>
+                        <p>Consulta las solicitudes en espera de tu firma</p>
+                    </a>
+                    <a href="/requests" class="quick-card">
+                        <span>Historial</span>
+                        <strong>Mis Solicitudes</strong>
+                        <p>Consulta el estado de todas tus solicitudes</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recientes -->
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2>Solicitudes Recientes</h2>
+                        <p class="panel-subtitle">Últimas 5 registradas</p>
+                    </div>
+                    <a href="/requests" class="panel-link">Ver todas →</a>
+                </div>
+                <div class="recent-list">
+                    @if (!_recent.Any())
+                    {
+                        <div class="empty-state compact">
+                            Sin solicitudes aún — crea la primera
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var r in _recent)
+                        {
+                            <a href="/requests/@r.Id" class="recent-item">
+                                <div>
+                                    <strong>#@r.Id — @r.RecipientBusinessName</strong>
+                                    <span>@r.Department · @r.BusinessUnit</span>
+                                </div>
+                                <div class="recent-meta">
+                                    <small>@r.RequestDate.ToString("dd/MM/yy")</small>
+                                    <StatusBadge Status="@r.Status" />
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private List<ShippingRequest> _all = new();
+    private List<ShippingRequest> _recent = new();
+    private int _inProgress, _approved, _premium;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _all = await RequestService.GetAllAsync();
+        _recent = _all.Take(5).ToList();
+        _inProgress = _all.Count(r => r.Status is not RequestStatus.Approved
+                                                and not RequestStatus.Rejected
+                                                and not RequestStatus.Draft);
+        _approved   = _all.Count(r => r.Status == RequestStatus.Approved);
+        _premium    = _all.Count(r => r.ApproximateCost >= 5000);
+        _loading    = false;
+    }
+}

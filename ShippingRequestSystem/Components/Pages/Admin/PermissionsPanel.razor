@@ -1,0 +1,391 @@
+﻿@page "/admin/permissions"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject IPermissionService PermissionService
+@inject CurrentUserService CurrentUser
+@rendermode InteractiveServer
+
+<PageTitle>Permisos de Aprobación</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div class="empty-state compact">⛔ Acceso restringido.</div>
+}
+else
+{
+    <div class="index-page">
+
+        <div class="index-hero" style="padding:1.25rem 1.5rem;">
+            <div class="index-hero-left">
+                <div class="index-kicker">🔑 Permisos</div>
+                <h1 style="font-size:1.6rem;">Roles de Aprobación</h1>
+                <p class="hero-text">
+                    Asigna usuarios a cada etapa del flujo de aprobación.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-self:center;">
+                <a href="/admin" class="btn-nav prev"
+                   style="text-decoration:none;display:inline-flex;align-items:center;">
+                    ← Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Un card por cada rol -->
+        @foreach (var role in _roles)
+        {
+            var perms = _allPerms.Where(p => p.RoleName == role).ToList();
+
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2>@role</h2>
+                        <p class="panel-subtitle">
+                            @perms.Count usuario(s) asignado(s)
+                        </p>
+                    </div>
+                    <button type="button"
+                            style="padding:0.5rem 1rem;border-radius:10px;
+                                   background:#eff6ff;color:#1d4ed8;font-weight:700;
+                                   font-size:0.84rem;border:1.5px solid #bfdbfe;
+                                   cursor:pointer;"
+                            @onclick="() => OpenAddModal(role)">
+                        + Agregar Usuario
+                    </button>
+                </div>
+
+                @if (!perms.Any())
+                {
+                    <div class="empty-state compact">
+                        Sin usuarios asignados — este rol no podrá aprobar solicitudes
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        @foreach (var p in perms)
+                        {
+                            <div style="display:flex;align-items:center;gap:1rem;
+                                        padding:0.85rem 1rem;border-radius:14px;
+                                        background:#f8fafc;border:1px solid #e2e8f0;">
+                                <div style="width:38px;height:38px;border-radius:50%;
+                                            background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+                                            display:flex;align-items:center;justify-content:center;
+                                            color:#fff;font-weight:800;font-size:0.82rem;
+                                            flex-shrink:0;">
+                                    @(p.UserName.Length >= 2
+                                        ? p.UserName[..2].ToUpper() : "?")
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:800;color:#0f172a;font-size:0.92rem;">
+                                        @p.UserName
+                                    </div>
+                                    <div style="font-size:0.78rem;color:#64748b;">
+                                        @p.UserEmail
+                                        @if (!string.IsNullOrEmpty(p.UserDepartment))
+                                        {
+                                            <span> · @p.UserDepartment</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(p.UserPosition))
+                                        {
+                                            <span> · @p.UserPosition</span>
+                                        }
+                                    </div>
+                                </div>
+                                <button type="button"
+                                        style="padding:0.35rem 0.75rem;border-radius:8px;
+                                               background:#fef2f2;color:#dc2626;font-weight:700;
+                                               font-size:0.78rem;border:1px solid #fecaca;
+                                               cursor:pointer;"
+                                        @onclick="() => ConfirmRemove(p)">
+                                    Quitar
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<!-- Modal para agregar usuario -->
+@if (_showAddModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔑</div>
+            <div class="modal-title">Agregar a: @_selectedRole</div>
+            <div class="modal-sub">
+                Busca al usuario por nombre, email o login de red
+            </div>
+
+            <!-- Buscador -->
+            <div class="field-group" style="margin-bottom:0.75rem;">
+                <label class="field-label">Buscar usuario</label>
+                <input type="text" class="field-input"
+                       placeholder="Nombre, email o login..."
+                       value="@_searchQuery"
+                       @oninput="OnSearchInput" />
+            </div>
+
+            <!-- Resultados -->
+            @if (_searching)
+            {
+                <div style="text-align:center;padding:1rem;color:#64748b;font-size:0.84rem;">
+                    Buscando...
+                </div>
+            }
+            else if (_searchResults.Any())
+            {
+                <div style="max-height:220px;overflow-y:auto;
+                            border:1px solid #e2e8f0;border-radius:12px;
+                            margin-bottom:0.75rem;">
+                    @foreach (var u in _searchResults)
+                    {
+                        bool isSelected = _selectedUser?.Id == u.Id;
+                        <div style="display:flex;align-items:center;gap:0.75rem;
+                                    padding:0.75rem 1rem;cursor:pointer;
+                                    background:@(isSelected ? "#eff6ff" : "#fff");
+                                    border-bottom:1px solid #f1f5f9;
+                                    transition:background 0.15s ease;"
+                             @onclick="() => _selectedUser = u">
+                            <div style="width:34px;height:34px;border-radius:50%;
+                                        background:@(isSelected ? "#1d4ed8" : "#e2e8f0");
+                                        display:flex;align-items:center;justify-content:center;
+                                        color:@(isSelected ? "#fff" : "#64748b");
+                                        font-weight:800;font-size:0.78rem;flex-shrink:0;">
+                                @((u.Username ?? u.PcLoginId ?? "?").Length >= 2
+                                    ? (u.Username ?? u.PcLoginId ?? "?")[..2].ToUpper()
+                                    : "?")
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;color:#0f172a;font-size:0.88rem;">
+                                    @(u.Username ?? u.PcLoginId)
+                                </div>
+                                <div style="font-size:0.76rem;color:#64748b;
+                                            overflow:hidden;text-overflow:ellipsis;
+                                            white-space:nowrap;">
+                                    @u.Email
+                                    @if (!string.IsNullOrEmpty(u.Department))
+                                    {
+                                        <span> · @u.Department</span>
+                                    }
+                                </div>
+                            </div>
+                            @if (isSelected)
+                            {
+                                <span style="color:#1d4ed8;font-weight:900;">✓</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (_searchQuery.Length >= 2)
+            {
+                <div style="text-align:center;padding:0.75rem;color:#94a3b8;
+                            font-size:0.84rem;margin-bottom:0.75rem;">
+                    Sin resultados para "@_searchQuery"
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_modalError))
+            {
+                <div style="padding:0.6rem 0.85rem;background:#fef2f2;border:1px solid #fecaca;
+                            border-radius:10px;color:#dc2626;font-size:0.82rem;
+                            font-weight:700;margin-bottom:0.75rem;">
+                    ⚠️ @_modalError
+                </div>
+            }
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" @onclick="CloseModal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-approve"
+                        disabled="@(_selectedUser is null || _saving)"
+                        @onclick="AddPermission">
+                    @if (_saving) { <span>Guardando...</span> }
+                    else { <span>✓ Agregar</span> }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal confirmar eliminación -->
+@if (_showRemoveModal && _permToRemove is not null)
+{
+    <div class="modal-overlay" @onclick="CloseRemoveModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚠️</div>
+            <div class="modal-title">Quitar Permiso</div>
+            <div class="modal-sub">
+                ¿Quitar a <strong>@_permToRemove.UserName</strong>
+                del rol <strong>@_permToRemove.RoleName</strong>?
+                Esta acción desactivará su acceso de aprobación.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" @onclick="CloseRemoveModal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-reject" @onclick="RemovePermission"
+                        disabled="@_saving">
+                    @if (_saving) { <span>Quitando...</span> }
+                    else { <span>✕ Quitar Permiso</span> }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _isAdmin = false;
+    private bool _showAddModal = false;
+    private bool _showRemoveModal = false;
+    private bool _searching = false;
+    private bool _saving = false;
+    private string _selectedRole = string.Empty;
+    private string _searchQuery = string.Empty;
+    private string _modalError = string.Empty;
+
+    private MeaxUser? _selectedUser = null;
+    private ApprovalRolePermission? _permToRemove = null;
+    private List<MeaxUser> _searchResults = new();
+    private List<ApprovalRolePermission> _allPerms = new();
+
+    private System.Timers.Timer? _debounceTimer;
+
+    private readonly string[] _roles =
+    {
+        "Trade Staff", "Trade Coordinator", "Trade Manager",
+        "Procurement Manager", "Sales Manager",
+        "Finance Manager", "President"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+        _allPerms = await PermissionService.GetAllPermissionsAsync();
+        _loading = false;
+    }
+
+    private void OpenAddModal(string role)
+    {
+        _selectedRole = role;
+        _searchQuery = string.Empty;
+        _searchResults = new();
+        _selectedUser = null;
+        _modalError = string.Empty;
+        _showAddModal = true;
+
+        // Limpiar timer al abrir
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+    }
+
+    private void CloseModal()
+    {
+        _showAddModal = false;
+        _modalError = string.Empty;
+        _searchQuery = string.Empty;
+        _searchResults = new();
+        _selectedUser = null;
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
+    }
+
+    private void ConfirmRemove(ApprovalRolePermission perm)
+    {
+        _permToRemove = perm;
+        _showRemoveModal = true;
+    }
+
+    private void CloseRemoveModal()
+    {
+        _showRemoveModal = false;
+        _permToRemove = null;
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchQuery = e.Value?.ToString() ?? string.Empty;
+        _selectedUser = null;
+
+        // Cancelar timer previo
+        _debounceTimer?.Dispose();
+
+        if (_searchQuery.Length < 2)
+        {
+            _searchResults = new();
+            _searching = false;
+            StateHasChanged();
+            return;
+        }
+
+        _searching = true;
+        StateHasChanged();
+
+        // Debounce con System.Timers.Timer — 350ms
+        _debounceTimer = new System.Timers.Timer(350);
+        _debounceTimer.AutoReset = false;
+        _debounceTimer.Elapsed += async (_, _) =>
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+
+            var results = await PermissionService.SearchUsersAsync(_searchQuery);
+
+            await InvokeAsync(() =>
+            {
+                _searchResults = results;
+                _searching = false;
+                StateHasChanged();
+            });
+        };
+        _debounceTimer.Start();
+    }
+
+    private async Task AddPermission()
+    {
+        if (_selectedUser is null) return;
+
+        _saving = true;
+        _modalError = string.Empty;
+
+        bool ok = await PermissionService.AddPermissionAsync(
+            _selectedRole, _selectedUser, CurrentUser.Email);
+
+        if (!ok)
+        {
+            _modalError = "Este usuario ya tiene este rol asignado.";
+            _saving = false;
+            return;
+        }
+
+        _allPerms = await PermissionService.GetAllPermissionsAsync();
+        _saving = false;
+        _showAddModal = false;
+        StateHasChanged();
+    }
+
+    private async Task RemovePermission()
+    {
+        if (_permToRemove is null) return;
+
+        _saving = true;
+        await PermissionService.RemovePermissionAsync(_permToRemove.Id);
+        _allPerms = await PermissionService.GetAllPermissionsAsync();
+        _saving = false;
+        _showRemoveModal = false;
+        _permToRemove = null;
+        StateHasChanged();
+    }
+}

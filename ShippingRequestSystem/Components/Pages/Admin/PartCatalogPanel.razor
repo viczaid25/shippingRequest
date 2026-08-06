@@ -1,0 +1,185 @@
+@page "/admin/parts"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject IPartCatalogService PartCatalogService
+@inject IPermissionService PermissionService
+@inject CurrentUserService CurrentUser
+@rendermode InteractiveServer
+
+<PageTitle>Catálogo de Números de Parte</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div class="empty-state compact">⛔ Acceso restringido.</div>
+}
+else
+{
+    <div class="index-page">
+
+        <div class="index-hero" style="padding:1.25rem 1.5rem;">
+            <div class="index-hero-left">
+                <div class="index-kicker">📋 Catálogo</div>
+                <h1 style="font-size:1.6rem;">Números de Parte</h1>
+                <p class="hero-text">
+                    Administra los números de parte disponibles para autocompletar en las
+                    solicitudes de envío.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-self:center;">
+                <a href="/admin" class="btn-nav prev"
+                   style="text-decoration:none;display:inline-flex;align-items:center;">
+                    ← Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-head">
+                <div>
+                    <h2>Agregar Número de Parte</h2>
+                    <p class="panel-subtitle">Se agrega activo y disponible de inmediato</p>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 2fr 1fr auto;gap:0.75rem;align-items:end;">
+                <div class="field-group">
+                    <label class="field-label">No. Parte <span class="required">*</span></label>
+                    <input type="text" class="field-input" placeholder="P/N"
+                           @bind="_newPartNumber" @bind:event="oninput" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Descripción</label>
+                    <input type="text" class="field-input" placeholder="Descripción"
+                           @bind="_newDescription" @bind:event="oninput" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Clase</label>
+                    <input type="text" class="field-input" placeholder="Clase"
+                           @bind="_newClass" @bind:event="oninput" />
+                </div>
+                <button type="button" class="btn-nav next" style="height:42px;"
+                        disabled="@(_saving || string.IsNullOrWhiteSpace(_newPartNumber))"
+                        @onclick="AddPart">
+                    + Agregar
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_formError))
+            {
+                <div style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:#fef2f2;
+                            border:1px solid #fecaca;border-radius:10px;color:#dc2626;
+                            font-size:0.82rem;font-weight:700;">
+                    ⚠️ @_formError
+                </div>
+            }
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-head">
+                <div>
+                    <h2>Catálogo Actual</h2>
+                    <p class="panel-subtitle">@_parts.Count(p => p.IsActive) activos de @_parts.Count</p>
+                </div>
+            </div>
+
+            @if (!_parts.Any())
+            {
+                <div class="empty-state compact">Sin números de parte registrados.</div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    @foreach (var p in _parts)
+                    {
+                        <div style="display:flex;align-items:center;gap:1rem;
+                                    padding:0.75rem 1rem;border-radius:14px;
+                                    background:#f8fafc;border:1px solid #e2e8f0;
+                                    opacity:@(p.IsActive ? "1" : "0.55");">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:800;color:#0f172a;font-size:0.9rem;">
+                                    @p.PartNumber
+                                    @if (!p.IsActive)
+                                    {
+                                        <span style="color:#94a3b8;font-weight:600;
+                                                      font-size:0.76rem;"> · inactivo</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.78rem;color:#64748b;">
+                                    @p.Description
+                                    @if (!string.IsNullOrEmpty(p.Class))
+                                    {
+                                        <span> · @p.Class</span>
+                                    }
+                                </div>
+                            </div>
+                            <button type="button"
+                                    style="padding:0.35rem 0.75rem;border-radius:8px;
+                                           font-weight:700;font-size:0.78rem;cursor:pointer;
+                                           background:@(p.IsActive ? "#fef2f2" : "#f0fdf4");
+                                           color:@(p.IsActive ? "#dc2626" : "#15803d");
+                                           border:1px solid @(p.IsActive ? "#fecaca" : "#86efac");"
+                                    @onclick="() => ToggleActive(p)">
+                                @(p.IsActive ? "Desactivar" : "Activar")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _isAdmin = false;
+    private bool _saving = false;
+    private string _newPartNumber = string.Empty;
+    private string _newDescription = string.Empty;
+    private string _newClass = string.Empty;
+    private string _formError = string.Empty;
+    private List<PartCatalog> _parts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+        _parts = await PartCatalogService.GetAllAsync();
+        _loading = false;
+    }
+
+    private async Task AddPart()
+    {
+        if (string.IsNullOrWhiteSpace(_newPartNumber)) return;
+
+        _saving = true;
+        _formError = string.Empty;
+
+        bool ok = await PartCatalogService.AddAsync(
+            _newPartNumber.Trim(), _newDescription, _newClass);
+
+        if (!ok)
+        {
+            _formError = "Ese número de parte ya existe en el catálogo.";
+            _saving = false;
+            return;
+        }
+
+        _newPartNumber = string.Empty;
+        _newDescription = string.Empty;
+        _newClass = string.Empty;
+        _parts = await PartCatalogService.GetAllAsync();
+        _saving = false;
+    }
+
+    private async Task ToggleActive(PartCatalog part)
+    {
+        await PartCatalogService.UpdateAsync(part.Id, part.Description, part.Class, !part.IsActive);
+        _parts = await PartCatalogService.GetAllAsync();
+    }
+}

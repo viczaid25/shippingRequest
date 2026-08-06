@@ -1,0 +1,149 @@
+﻿@page "/admin"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject IPermissionService PermissionService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Panel de Administración</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div class="panel-card" style="text-align:center;padding:3rem;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">⛔</div>
+        <h2 style="color:#dc2626;">Acceso Restringido</h2>
+        <p style="color:#64748b;">Solo los administradores del sistema pueden acceder.</p>
+        <a href="/" class="btn-nav next" style="display:inline-flex;margin-top:1rem;">
+            ← Volver al Dashboard
+        </a>
+    </div>
+}
+else
+{
+    <div class="index-page">
+
+        <!-- Hero -->
+        <div class="index-hero">
+            <div class="index-hero-left">
+                <div class="index-kicker">⚙️ Administración</div>
+                <h1>Panel de Control</h1>
+                <p class="hero-text">
+                    Gestiona los permisos de aprobación y los administradores del sistema.
+                </p>
+            </div>
+        </div>
+
+        <!-- Cards de navegación -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+
+            <a href="/admin/permissions" class="stat-card"
+               style="text-decoration:none;cursor:pointer;">
+                <span>Configuración</span>
+                <strong style="font-size:2.5rem;">🔑</strong>
+                <p>Gestionar permisos de aprobación por rol</p>
+            </a>
+
+            <a href="/admin/admins" class="stat-card"
+               style="text-decoration:none;cursor:pointer;">
+                <span>Administradores</span>
+                <strong style="font-size:2.5rem;">👑</strong>
+                <p>Agregar o quitar administradores del sistema</p>
+            </a>
+
+            <a href="/admin/parts" class="stat-card"
+               style="text-decoration:none;cursor:pointer;">
+                <span>Catálogo</span>
+                <strong style="font-size:2.5rem;">📋</strong>
+                <p>Números de parte disponibles para autocompletar</p>
+            </a>
+
+            <div class="stat-card">
+                <span>Roles Configurados</span>
+                <strong style="color:#16a34a;">@_totalPerms</strong>
+                <p>Asignaciones de roles activas en el sistema</p>
+            </div>
+
+        </div>
+
+        <!-- Resumen de permisos -->
+        <div class="panel-card">
+            <div class="panel-head">
+                <div>
+                    <h2>Resumen de Roles</h2>
+                    <p class="panel-subtitle">
+                        Estado actual de cada etapa de aprobación
+                    </p>
+                </div>
+                <a href="/admin/permissions" class="panel-link">Editar →</a>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:0.65rem;">
+                @foreach (var role in _roles)
+                {
+                    var perms = _allPerms
+                    .Where(p => p.RoleName == role)
+                    .ToList();
+
+                    <div style="display:flex;align-items:center;gap:1rem;
+                                        padding:0.85rem 1rem;border-radius:14px;
+                                        background:#f8fafc;border:1px solid #e2e8f0;">
+                        <div style="min-width:200px;font-weight:800;
+                                            font-size:0.88rem;color:#0f172a;">
+                            @role
+                        </div>
+                        <div style="flex:1;display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            @if (!perms.Any())
+                            {
+                                <span style="font-size:0.78rem;color:#ef4444;
+                                                         font-weight:700;font-style:italic;">
+                                    ⚠️ Sin usuarios configurados
+                                </span>
+                            }
+                            else
+                            {
+                                @foreach (var p in perms)
+                                {
+                                    <span style="padding:0.25rem 0.65rem;border-radius:999px;
+                                                                 background:#eff6ff;color:#1d4ed8;
+                                                                 font-size:0.78rem;font-weight:700;">
+                                        @p.UserName
+                                    </span>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _isAdmin = false;
+    private int _totalPerms = 0;
+    private List<ApprovalRolePermission> _allPerms = new();
+
+    private readonly string[] _roles =
+    {
+        "Trade Staff", "Trade Coordinator", "Trade Manager",
+        "Procurement Manager", "Sales Manager",
+        "Finance Manager", "President"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+        _allPerms = await PermissionService.GetAllPermissionsAsync();
+        _totalPerms = _allPerms.Count;
+        _loading = false;
+    }
+}

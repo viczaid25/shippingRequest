@@ -1,0 +1,31 @@
+﻿@inherits LayoutComponentBase
+@inject CurrentUserService CurrentUser
+
+<div class="page">
+    <SidebarInteractive />
+    <main>
+        <div class="top-row px-4"
+             style="justify-content:space-between;">
+            <span style="color:#64748b;font-size:0.85rem;font-weight:600;">
+                Shipping Request System
+            </span>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <span style="font-size:0.84rem;color:#374151;font-weight:600;">
+                    @CurrentUser.DisplayName
+                </span>
+                <a href="/auth/logout"
+                   style="padding:0.4rem 0.9rem;border-radius:8px;
+                          background:#f1f5f9;color:#374151;font-size:0.82rem;
+                          font-weight:700;text-decoration:none;border:1px solid #e2e8f0;
+                          transition:all 0.18s ease;"
+                   onmouseover="this.style.background='#e2e8f0'"
+                   onmouseout="this.style.background='#f1f5f9'">
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+        <article class="content">
+            @Body
+        </article>
+    </main>
+</div>

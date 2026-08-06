@@ -1,0 +1,22 @@
+@if (Visible)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+            <div class="modal-title">@Title</div>
+            <div class="modal-sub">@Message</div>
+            <div class="modal-actions">
+                <button class="btn-approve" @onclick="Close">Entendido</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Title { get; set; } = "Atención";
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private async Task Close() => await OnClose.InvokeAsync();
+}

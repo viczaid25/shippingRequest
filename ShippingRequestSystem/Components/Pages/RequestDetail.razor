@@ -1,0 +1,672 @@
+﻿@page "/requests/{Id:int}"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@inject IShippingRequestService RequestService
+@inject IApprovalService ApprovalService
+@inject IEmailService EmailService
+@inject NavigationManager Nav
+@inject CurrentUserService CurrentUser
+@rendermode InteractiveServer
+
+<PageTitle>@(_request?.Folio ?? $"SR-{Id}") — Shipping Request</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        @for (int i = 0; i < 3; i++)
+        {
+            <div class="index-skeleton skeleton-card"></div>
+        }
+    </div>
+}
+else if (_request is null)
+{
+    <div class="empty-state compact">Solicitud no encontrada.</div>
+}
+else
+{
+    <div class="detail-page">
+
+        <!-- Hero -->
+        <div class="detail-hero">
+            <div class="detail-hero-left">
+                <div class="detail-hero-id">
+                    @_request.ToShipmentIcon() @_request.ToShipmentLabel()
+                    &nbsp;·&nbsp;
+                    @(_request.Folio ?? $"SR-{_request.Id}")
+                </div>
+                <h1>@_request.RecipientBusinessName</h1>
+                <div style="color:rgba(255,255,255,0.7);font-size:0.92rem;">
+                    @_request.RequestorName · @_request.Department · @_request.BusinessUnit
+                </div>
+                <div class="detail-hero-meta">
+                    <span class="detail-chip">@_request.ShippingWay.ToDisplayName()</span>
+                    <span class="detail-chip">@_request.ServiceType.ToDisplayName()</span>
+                    <span class="detail-chip">@_request.Scope</span>
+                    @if (_request.PremiumFreightInfo is not null)
+                    {
+                        <span class="detail-chip premium">
+                            ⭐ @(_request.PremiumFreightInfo.Folio ?? "Premium Freight")
+                        </span>
+                    }
+                    <span class="detail-chip">📅 @_request.RequestDate.ToString("dd/MM/yyyy")</span>
+                </div>
+            </div>
+            <div class="detail-hero-right">
+                <div class="detail-cost">
+                    <div class="detail-cost-label">Costo Aprox.</div>
+                    <div class="detail-cost-value @(_request.IsPremiumFreight ? "premium" : "")">
+                        $@_request.ApproximateCost.ToString("N2")
+                    </div>
+                    <div style="color:rgba(255,255,255,0.5);font-size:0.76rem;margin-top:0.15rem;">
+                        USD
+                    </div>
+                </div>
+                <StatusBadge Status="@_request.Status" />
+            </div>
+        </div>
+
+        <!-- ── Acciones contextuales ─────────────────────────────────────────── -->
+        <!-- 1. Trade Staff sube IGI + cotizaciones -->
+        @if (_request.Status == RequestStatus.PendingTradeStaffQuotes &&
+            CurrentUser.IsTradeStaff)
+        {
+            <div class="approval-action-card">
+                <div class="approval-action-title">Acción Requerida — Trade Staff</div>
+                <div class="approval-action-sub">
+                    Ingresa el % IGI y sube mínimo 3 cotizaciones con PDF para que
+                    el usuario pueda elegir.
+                </div>
+                <div class="approval-btns">
+                    <a href="/requests/@_request.Id/staff-review" class="btn-approve"
+                       style="text-decoration:none;display:inline-flex;
+                                      align-items:center;gap:0.5rem;">
+                        📋 Ingresar IGI y Cotizaciones
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- 2. Usuario elige cotización -->
+        @if (_request.Status == RequestStatus.PendingUserQuoteSelection &&
+            _currentUserEmail == _request.RequestorEmail)
+        {
+            <div class="approval-action-card">
+                <div class="approval-action-title">Acción Requerida — Selección de Cotización</div>
+                <div class="approval-action-sub">
+                    El equipo de Trade Staff subió las cotizaciones.
+                    Elige la más conveniente para tu envío.
+                </div>
+                <div class="approval-btns">
+                    <a href="/requests/@_request.Id/select-quote" class="btn-approve"
+                       style="text-decoration:none;display:inline-flex;
+                                      align-items:center;gap:0.5rem;">
+                        🧾 Ver y Elegir Cotización
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- 3. Usuario llena Premium Freight -->
+        @if (_request.Status == RequestStatus.PendingPremiumFreight &&
+            _currentUserEmail == _request.RequestorEmail)
+        {
+            <div class="approval-action-card"
+                 style="border-color:#f59e0b;
+                                background:linear-gradient(135deg,#fffbeb,#fef3c7);">
+                <div class="approval-action-title" style="color:#92400e;">
+                    ⭐ Premium Freight Requerido
+                </div>
+                <div class="approval-action-sub" style="color:#d97706;">
+                    @if (_request.InvoiceType == InvoiceType.Comercial)
+                    {
+                        <span>Factura comercial — completa el formulario de Premium Freight.</span>
+                    }
+                    else
+                    {
+                        <span>
+                            La cotización seleccionada supera $5,000 USD —
+                            completa el formulario de Premium Freight.
+                        </span>
+                    }
+                </div>
+                <div class="approval-btns">
+                    <a href="/requests/@_request.Id/premium-freight" class="btn-approve"
+                       style="text-decoration:none;display:inline-flex;
+                                      align-items:center;gap:0.5rem;
+                                      background:linear-gradient(135deg,#f59e0b,#d97706);">
+                        ⭐ Completar Premium Freight
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- 4. Trade Staff aprueba formalmente (después de cotización elegida) -->
+        @if (_request.Status == RequestStatus.PendingTradeStaffApproval &&
+            _pendingStep is not null)
+        {
+            <div class="approval-action-card"
+                 style="border-color:#0369a1;background:#e0f2fe;">
+                <div class="approval-action-title" style="color:#0c4a6e;">
+                    ✅ Aprobación Final — Trade Staff
+                </div>
+                <div class="approval-action-sub" style="color:#0369a1;">
+                    El usuario eligió la cotización:
+                    @if (_request.Quotes.Any(q => q.IsSelected))
+                    {
+                        var sel = _request.Quotes.First(q => q.IsSelected);
+                        <strong> @sel.ProviderName — $@sel.Amount.ToString("N2") USD</strong>
+                    }
+                    @if (_request.PremiumFreightInfo is not null)
+                    {
+                        <span>
+                            · Folio PF: <strong>
+                                @(_request.PremiumFreightInfo.Folio ?? "—")
+                            </strong>
+                        </span>
+                    }
+                    . Revisa y aprueba o rechaza la solicitud.
+                </div>
+                <div class="approval-btns">
+                    <button class="btn-approve" @onclick="() => OpenModal(true)">
+                        ✓ Aprobar Solicitud
+                    </button>
+                    <button class="btn-reject" @onclick="() => OpenModal(false)">
+                        ✕ Rechazar Solicitud
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- 5. Flujo formal (Trade Coordinator en adelante) -->
+        @if (_pendingStep is not null &&
+            _request.Status != RequestStatus.PendingTradeStaffQuotes &&
+            _request.Status != RequestStatus.PendingUserQuoteSelection &&
+            _request.Status != RequestStatus.PendingPremiumFreight &&
+            _request.Status != RequestStatus.PendingTradeStaffApproval)
+        {
+            <div class="approval-action-card">
+                <div class="approval-action-title">Acción Requerida</div>
+                <div class="approval-action-sub">
+                    Eres el aprobador actual como
+                    <strong>@_pendingStep.RoleName</strong>
+                </div>
+                <div class="approval-btns">
+                    <button class="btn-approve" @onclick="() => OpenModal(true)">
+                        ✓ Aprobar Solicitud
+                    </button>
+                    <button class="btn-reject" @onclick="() => OpenModal(false)">
+                        ✕ Rechazar Solicitud
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Enviar resumen a Finanzas -->
+        @if (CurrentUser.IsFinanceManager &&
+            (_request.Status == RequestStatus.PendingFinanceManager ||
+             _request.Status == RequestStatus.Approved))
+        {
+            <div class="approval-action-card">
+                <div class="approval-action-title">Facturación — Finanzas</div>
+                <div class="approval-action-sub">
+                    Envía el resumen de esta solicitud (folio, direcciones, items, pesos,
+                    costo, Incoterm y cotización seleccionada) al correo de Finanzas configurado.
+                </div>
+                <div class="approval-btns">
+                    <button class="btn-approve" disabled="@_sendingFinanceEmail"
+                            @onclick="SendFinanceSummary">
+                        @if (_sendingFinanceEmail)
+                        {
+                            <span>Enviando...</span>
+                        }
+                        else
+                        {
+                            <span>✉️ Enviar Resumen a Finanzas</span>
+                        }
+                    </button>
+                </div>
+                @if (!string.IsNullOrEmpty(_financeEmailMsg))
+                {
+                    <div style="margin-top:0.6rem;font-size:0.84rem;font-weight:700;
+                                color:@(_financeEmailOk ? "#16a34a" : "#dc2626");">
+                        @_financeEmailMsg
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- ── Información general ────────────────────────────────────────────── -->
+        <div class="detail-grid">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">👤</div>
+                    <h3 class="info-card-title">Solicitante</h3>
+                </div>
+                <div class="info-card-body">
+                    <InfoRow Label="Nombre" Value="@_request.RequestorName" />
+                    <InfoRow Label="Email" Value="@_request.RequestorEmail" />
+                    <InfoRow Label="Departamento" Value="@_request.Department" />
+                    <InfoRow Label="Unidad" Value="@_request.BusinessUnit" />
+                    <InfoRow Label="Manager" Value="@_request.UserManagerName" />
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">📍</div>
+                    <h3 class="info-card-title">Destinatario</h3>
+                </div>
+                <div class="info-card-body">
+                    <InfoRow Label="Razón Social" Value="@_request.RecipientBusinessName" />
+                    <InfoRow Label="Dirección" Value="@_request.RecipientAddress" />
+                    <InfoRow Label="Tax ID" Value="@_request.RecipientTaxId" />
+                    <InfoRow Label="Atención a" Value="@_request.RecipientAttentionTo" />
+                    <InfoRow Label="Teléfono" Value="@_request.RecipientPhone" />
+                    <InfoRow Label="Email" Value="@_request.RecipientEmail" />
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-grid three">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">🚢</div>
+                    <h3 class="info-card-title">Envío</h3>
+                </div>
+                <div class="info-card-body">
+                    <InfoRow Label="Folio SR" Value="@(_request.Folio ?? "—")" />
+                    <InfoRow Label="Vía" Value="@_request.ShippingWay.ToDisplayName()" />
+                    <InfoRow Label="Servicio" Value="@_request.ServiceType.ToDisplayName()" />
+                    <InfoRow Label="Entrega" Value="@(_request.DeliveryDate?.ToString("dd/MM/yyyy") ?? "—")" />
+                    <InfoRow Label="Propósito" Value="@_request.ShipmentPurpose" />
+                    <InfoRow Label="Estibable" Value="@(_request.IsStackable ? "Sí" : "No")" />
+                    <InfoRow Label="Seguro" Value="@(_request.HasInsurance ? "Sí" : "No")" />
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">🧾</div>
+                    <h3 class="info-card-title">Factura</h3>
+                </div>
+                <div class="info-card-body">
+                    <InfoRow Label="Tipo" Value="@_request.InvoiceType.ToString()" />
+                    <InfoRow Label="No. Factura" Value="@_request.InvoiceNumber" />
+                    <InfoRow Label="Incoterm" Value="@(_request.Incoterm ?? "Pendiente — lo asigna Trade Staff")" />
+                    <InfoRow Label="Tramos de Flete" Value="@FreightLegsSummary()" />
+                    <InfoRow Label="% IGI" Value="@(_request.IgiPercentage.ToString("N2") + "%")" />
+                    <InfoRow Label="COO" Value="@(_request.HasCOO ? "Sí" : "No")" />
+                    @if (_request.HasCOO && !string.IsNullOrEmpty(_request.CooDocumentPath))
+                    {
+                        <div class="info-row">
+                            <span class="info-row-label">Documento COO</span>
+                            <span class="info-row-value">
+                                <a href="@_request.CooDocumentPath" target="_blank"
+                                   style="font-weight:700;color:#1d4ed8;">📄 Ver documento</a>
+                            </span>
+                        </div>
+                    }
+                    <InfoRow Label="Tipo Operación" Value="@_request.OperationType.ToString()" />
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">💳</div>
+                    <h3 class="info-card-title">Pago</h3>
+                </div>
+                <div class="info-card-body">
+                    <InfoRow Label="Responsable" Value="@_request.PaymentResponsibility.ToString()" />
+                    @if (_request.PaymentResponsibility == PaymentResponsibility.Receiver)
+                    {
+                        <InfoRow Label="Parcel Account" Value="@_request.ParcelAccount" />
+                        <InfoRow Label="Paquetería" Value="@(_request.Carrier?.ToString() ?? "—")" />
+                    }
+                    <InfoRow Label="Folio Baja" Value="@_request.MaterialBajaFolio" />
+                    <InfoRow Label="Observaciones" Value="@_request.RequestorObservations" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Comprador -->
+        @if (!string.IsNullOrEmpty(_request.BuyerBusinessName))
+        {
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">🏢</div>
+                    <h3 class="info-card-title">Comprador</h3>
+                </div>
+                <div class="info-card-body"
+                     style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
+                    <InfoRow Label="Razón Social" Value="@_request.BuyerBusinessName" />
+                    <InfoRow Label="Tax ID" Value="@_request.BuyerTaxId" />
+                    <InfoRow Label="Dirección" Value="@_request.BuyerAddress" />
+                </div>
+            </div>
+        }
+
+        <!-- Cotizaciones -->
+        @if (_request.Quotes.Any())
+        {
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">💲</div>
+                    <h3 class="info-card-title">Cotizaciones de Envío</h3>
+                </div>
+                <div class="info-card-body">
+                    <div style="display:grid;
+                                        grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+                                        gap:1rem;">
+                        @foreach (var q in _request.Quotes.OrderBy(q => q.Amount))
+                        {
+                            <div style="border:2px solid @(q.IsSelected ? "#3b82f6" : "#e2e8f0");
+                                                    border-radius:16px;padding:1rem;background:#fff;">
+                                <div style="display:flex;align-items:center;
+                                                        justify-content:space-between;
+                                                        margin-bottom:0.5rem;flex-wrap:wrap;gap:0.35rem;">
+                                    <span style="font-size:0.75rem;font-weight:800;
+                                                             color:#64748b;text-transform:uppercase;">
+                                        @q.ProviderName
+                                    </span>
+                                    @if (q.IsSelected)
+                                    {
+                                        <span style="background:#3b82f6;color:#fff;
+                                                                     border-radius:999px;padding:0.2rem 0.6rem;
+                                                                     font-size:0.7rem;font-weight:900;">
+                                            ✓ Elegida
+                                        </span>
+                                    }
+                                    @if (q.Amount >= 5000)
+                                    {
+                                        <span style="background:#fef3c7;color:#d97706;
+                                                                     border-radius:999px;padding:0.2rem 0.6rem;
+                                                                     font-size:0.7rem;font-weight:900;">
+                                            ⭐ Premium
+                                        </span>
+                                    }
+                                </div>
+                                <div style="font-size:1.6rem;font-weight:900;
+                                                        color:@(q.Amount >= 5000 ? "#d97706" : "#0f172a");
+                                                        line-height:1;margin-bottom:0.4rem;">
+                                    $@q.Amount.ToString("N2")
+                                    <span style="font-size:0.78rem;color:#64748b;
+                                                             font-weight:600;">USD</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(q.Notes))
+                                {
+                                    <div style="font-size:0.8rem;color:#64748b;
+                                                                margin-bottom:0.5rem;">
+                                        @q.Notes
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(q.FilePath))
+                                {
+                                    <a href="@q.FilePath" target="_blank"
+                                       style="display:inline-flex;align-items:center;
+                                                              gap:0.35rem;padding:0.35rem 0.75rem;
+                                                              border-radius:8px;background:#fef2f2;
+                                                              color:#dc2626;font-weight:700;font-size:0.78rem;
+                                                              text-decoration:none;border:1px solid #fecaca;">
+                                        📄 @(q.FileName ?? "Ver PDF")
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Paquetes -->
+        @if (_request.Packages.Any())
+        {
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">📦</div>
+                    <h3 class="info-card-title">
+                        Paquetes e Items
+                        <span style="font-weight:600;color:#64748b;
+                                             font-size:0.82rem;margin-left:0.5rem;">
+                            (@_request.Packages.Count(p => p.ParentPalletId == null) paquetes raíz)
+                        </span>
+                    </h3>
+                </div>
+                <div class="info-card-body">
+                    <div class="pkg-detail-tree">
+                        @foreach (var pkg in _request.Packages
+                                        .Where(p => p.ParentPalletId == null))
+                        {
+                            <PackageDetailNode Package="pkg" />
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Premium Freight -->
+        @if (_request.PremiumFreightInfo is not null)
+        {
+            var pf = _request.PremiumFreightInfo;
+            <div class="info-card" style="border-color:#f59e0b;">
+                <div class="info-card-header"
+                     style="background:#fef3c7;border-color:#fde68a;">
+                    <div class="info-card-icon" style="background:#fde68a;">⭐</div>
+                    <h3 class="info-card-title">Premium Freight</h3>
+                    <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;">
+                        @if (!string.IsNullOrEmpty(pf.Folio))
+                        {
+                            <span style="font-size:0.82rem;font-weight:800;
+                                                     color:#92400e;background:#fde68a;
+                                                     padding:0.25rem 0.65rem;border-radius:999px;">
+                                📋 @pf.Folio
+                            </span>
+                        }
+                        <span class="premium-badge">≥ $5,000 USD</span>
+                    </div>
+                </div>
+                <div class="info-card-body">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;
+                                        gap:0.6rem;margin-bottom:0.75rem;">
+                        <InfoRow Label="Dirección" Value="@pf.Direction.ToString()" />
+                        <InfoRow Label="Alcance" Value="@pf.Scope.ToString()" />
+                        <InfoRow Label="Transporte" Value="@pf.Transport.ToDisplayName()" />
+                        <InfoRow Label="Pago" Value="@pf.Payment.ToDisplayName()" />
+                        <InfoRow Label="Forwarder" Value="@pf.Forwarder" />
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;
+                                        gap:1rem;margin-bottom:0.75rem;">
+                        <div>
+                            <div style="font-weight:800;font-size:0.82rem;
+                                                color:#92400e;margin-bottom:0.5rem;">
+                                📤 Pick Up
+                            </div>
+                            <InfoRow Label="Nombre" Value="@pf.PickUpName" />
+                            <InfoRow Label="Dirección" Value="@pf.PickUpAddress" />
+                            <InfoRow Label="Contacto" Value="@pf.PickUpContact" />
+                        </div>
+                        <div>
+                            <div style="font-weight:800;font-size:0.82rem;
+                                                color:#92400e;margin-bottom:0.5rem;">
+                                📥 Delivery
+                            </div>
+                            <InfoRow Label="Nombre" Value="@pf.DeliveryName" />
+                            <InfoRow Label="Dirección" Value="@pf.DeliveryAddress" />
+                            <InfoRow Label="Contacto" Value="@pf.DeliveryContact" />
+                        </div>
+                    </div>
+                    <InfoRow Label="Cause of Shipment" Value="@pf.CauseOfShipment" />
+                    <InfoRow Label="Countermeasures" Value="@pf.Countermeasures" />
+                </div>
+            </div>
+        }
+
+        <!-- Evidencias fotográficas -->
+        @if (!string.IsNullOrEmpty(_request.EvidenceNetWeightPhotoPath) ||
+             !string.IsNullOrEmpty(_request.EvidenceGrossWeightPhotoPath) ||
+             !string.IsNullOrEmpty(_request.EvidenceDimensionsPhotoPath) ||
+             !string.IsNullOrEmpty(_request.EvidenceFinalPackagingPhotoPath))
+        {
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon">📷</div>
+                    <h3 class="info-card-title">Evidencias Fotográficas</h3>
+                </div>
+                <div class="info-card-body"
+                     style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;">
+                    @foreach (var (label, path) in new[]
+                    {
+                        ("Peso Neto", _request.EvidenceNetWeightPhotoPath),
+                        ("Peso Bruto", _request.EvidenceGrossWeightPhotoPath),
+                        ("Dimensiones", _request.EvidenceDimensionsPhotoPath),
+                        ("Empaque Final", _request.EvidenceFinalPackagingPhotoPath)
+                    })
+                    {
+                        @if (!string.IsNullOrEmpty(path))
+                        {
+                            <a href="@path" target="_blank" style="text-decoration:none;">
+                                <img src="@path" alt="@label"
+                                     style="width:100%;height:110px;object-fit:cover;
+                                            border-radius:12px;border:1px solid #e2e8f0;" />
+                                <div style="font-size:0.78rem;color:#64748b;font-weight:700;
+                                            margin-top:0.3rem;text-align:center;">
+                                    @label
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Timeline de aprobación -->
+        <div class="detail-grid">
+            <div class="info-card" style="grid-column:span 2;">
+                <div class="info-card-header">
+                    <div class="info-card-icon">🔄</div>
+                    <h3 class="info-card-title">Flujo de Aprobación</h3>
+                </div>
+                <div class="info-card-body">
+                    @if (_request.ApprovalSteps.Any())
+                    {
+                        <ApprovalTimeline Steps="@(_request.ApprovalSteps
+                                                                      .OrderBy(s => s.StepOrder).ToList())" />
+                                }
+                    else
+                    {
+                        <div class="empty-state compact">
+                            Sin pasos de aprobación registrados.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal de aprobación -->
+    <ApprovalModal Visible="_showModal"
+                   IsApprove="_modalIsApprove"
+                   RequestId="_request.Id"
+                   StepId="_pendingStep?.Id ?? 0"
+                   OnCancel="CloseModal"
+                   OnConfirm="HandleApproval" />
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ShippingRequest? _request;
+    private ApprovalStep? _pendingStep;
+    private bool _loading = true;
+    private bool _showModal = false;
+    private bool _modalIsApprove = false;
+    private string _currentUserEmail = string.Empty;
+    private bool _sendingFinanceEmail = false;
+    private bool _financeEmailOk = false;
+    private string _financeEmailMsg = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUserEmail = CurrentUser.Email;
+        await LoadRequest();
+    }
+
+    private async Task LoadRequest()
+    {
+        _loading = true;
+        _request = await RequestService.GetByIdAsync(Id);
+
+        if (_request is not null)
+        {
+            _pendingStep = _request.ApprovalSteps
+                .Where(s => !s.IsCompleted && s.IsRequired &&
+                            string.Equals(s.ApproverEmail, _currentUserEmail,
+                                          StringComparison.OrdinalIgnoreCase))
+                .OrderBy(s => s.StepOrder)
+                .FirstOrDefault();
+        }
+
+        _loading = false;
+    }
+
+    private async Task SendFinanceSummary()
+    {
+        if (_request is null) return;
+
+        _sendingFinanceEmail = true;
+        _financeEmailMsg = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await EmailService.SendFinanceSummaryAsync(_request);
+            _financeEmailOk = true;
+            _financeEmailMsg = "✓ Resumen enviado a Finanzas correctamente.";
+        }
+        catch (Exception ex)
+        {
+            _financeEmailOk = false;
+            _financeEmailMsg = $"No se pudo enviar: {ex.Message}";
+        }
+        finally
+        {
+            _sendingFinanceEmail = false;
+            StateHasChanged();
+        }
+    }
+
+    private string FreightLegsSummary()
+    {
+        if (_request is null) return "—";
+        var legs = new List<string>();
+        if (_request.RequiresLocalOriginFreight) legs.Add("Local Origen");
+        if (_request.RequiresLocalDestinationFreight) legs.Add("Local Destino");
+        if (_request.RequiresInternationalFreight) legs.Add("Internacional");
+        return legs.Count > 0 ? string.Join(" · ", legs) : "—";
+    }
+
+    private void OpenModal(bool approve)
+    {
+        _modalIsApprove = approve;
+        _showModal = true;
+    }
+
+    private void CloseModal() => _showModal = false;
+
+    private async Task HandleApproval((bool approved, string? comments) result)
+    {
+        if (_pendingStep is null) return;
+
+        await ApprovalService.ProcessApprovalAsync(
+            _request!.Id,
+            _pendingStep.Id,
+            result.approved,
+            _currentUserEmail,
+            result.comments);
+
+        _showModal = false;
+        await LoadRequest();
+    }
+}

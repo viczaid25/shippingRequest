@@ -1,0 +1,11 @@
+﻿@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Helpers
+
+<span class="status-pill"
+      style="background:@Status.ToStatusBg(); color:@Status.ToStatusColor(); font-size:0.76rem; font-weight:900;">
+    @Status.ToDisplayName()
+</span>
+
+@code {
+    [Parameter] public RequestStatus Status { get; set; }
+}

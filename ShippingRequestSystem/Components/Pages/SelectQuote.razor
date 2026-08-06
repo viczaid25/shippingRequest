@@ -1,0 +1,301 @@
+﻿@page "/requests/{Id:int}/select-quote"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@inject IShippingRequestService RequestService
+@inject IQuoteService QuoteService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Seleccionar Cotización — #@Id</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (_request is null)
+{
+    <div class="empty-state compact">Solicitud no encontrada.</div>
+}
+else
+{
+    <div class="detail-page">
+
+        <!-- Hero -->
+        <div class="detail-hero">
+            <div class="detail-hero-left">
+                <div class="detail-hero-id">🧾 SELECCIÓN DE COTIZACIÓN · #@_request.Id</div>
+                <h1>@_request.RecipientBusinessName</h1>
+                <div style="color:rgba(255,255,255,0.7);font-size:0.92rem;">
+                    Elige la cotización que mejor se adapte a tu envío
+                </div>
+            </div>
+            <div class="detail-hero-right">
+                <div class="detail-cost">
+                    <div class="detail-cost-label">% IGI</div>
+                    <div class="detail-cost-value">
+                        @_request.IgiPercentage.ToString("N2")%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipo de factura (info) -->
+        <div style="padding:0.85rem 1.1rem;border-radius:14px;
+                        background:@(_request.InvoiceType == InvoiceType.Comercial ? "#ede9fe" : "#f0fdf4");
+                        border:1.5px solid @(_request.InvoiceType == InvoiceType.Comercial ? "#c4b5fd" : "#86efac");
+                        display:flex;align-items:center;gap:0.75rem;">
+            <span style="font-size:1.2rem;">
+                @(_request.InvoiceType == InvoiceType.Comercial ? "📋" : "📄")
+            </span>
+            <div>
+                <div style="font-weight:800;font-size:0.88rem;
+                                color:@(_request.InvoiceType == InvoiceType.Comercial ? "#5b21b6" : "#15803d")">
+                    Factura @_request.InvoiceType.ToString()
+                </div>
+                <div style="font-size:0.8rem;
+                                color:@(_request.InvoiceType == InvoiceType.Comercial ? "#7c3aed" : "#16a34a")">
+                    @if (_request.InvoiceType == InvoiceType.Comercial)
+                    {
+                        <span>
+                            Las facturas comerciales siempre requieren información de
+                            Premium Freight, independientemente del monto.
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            Las facturas de traslado solo requieren Premium Freight
+                            si la cotización elegida es ≥ $5,000 USD.
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de cotizaciones -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+            @foreach (var q in _request.Quotes.OrderBy(q => q.Amount))
+            {
+                bool isSelected = _selectedQuoteId == q.Id;
+                bool isPremium = q.Amount >= 5000;
+
+                <div style="border:2px solid @(isSelected ? "#3b82f6" : "#e2e8f0");
+                                    border-radius:20px;padding:1.25rem;background:#fff;
+                                    cursor:pointer;transition:all 0.2s ease;
+                                    box-shadow:@(isSelected
+                                                     ? "0 0 0 4px rgba(59,130,246,0.15), 0 8px 24px rgba(15,23,42,0.08)"
+                                                     : "0 2px 8px rgba(15,23,42,0.04)");"
+             @onclick="() => ChooseQuote(q.Id)">
+
+                    <!-- Badges -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;
+                                        margin-bottom:0.75rem;flex-wrap:wrap;gap:0.35rem;">
+                        <span style="font-size:0.72rem;font-weight:800;color:#64748b;
+                                             text-transform:uppercase;letter-spacing:0.05em;">
+                            Cotización
+                        </span>
+                        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                    @if (isSelected)
+                            {
+                                <span style="background:#3b82f6;color:#fff;border-radius:999px;
+                                                         padding:0.2rem 0.65rem;font-size:0.7rem;font-weight:900;">
+                                    ✓ Seleccionada
+                                </span>
+                            }
+                            @if (isPremium)
+                            {
+                                <span style="background:#fef3c7;color:#d97706;border-radius:999px;
+                                                         padding:0.2rem 0.65rem;font-size:0.7rem;font-weight:900;">
+                                    ⭐ Premium
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Proveedor -->
+                    <div style="font-size:1.05rem;font-weight:800;color:#0f172a;
+                                        margin-bottom:0.35rem;">
+                        @q.ProviderName
+                    </div>
+
+                    <!-- Monto -->
+                    <div style="font-size:1.9rem;font-weight:900;line-height:1;
+                                        margin-bottom:0.5rem;
+                                        color:@(isPremium ? "#d97706" : "#0f172a")">
+                        $@q.Amount.ToString("N2")
+                        <span style="font-size:0.8rem;font-weight:600;color:#64748b;">USD</span>
+                    </div>
+
+                    <!-- Notas -->
+                    @if (!string.IsNullOrEmpty(q.Notes))
+                    {
+                        <div style="font-size:0.82rem;color:#64748b;
+                                                border-top:1px solid #f1f5f9;
+                                                padding-top:0.5rem;margin-top:0.5rem;">
+                            @q.Notes
+                        </div>
+                    }
+
+                    <!-- PDF adjunto -->
+                    @if (!string.IsNullOrEmpty(q.FilePath))
+                    {
+                        <div style="margin-top:0.75rem;padding-top:0.65rem;
+                                                border-top:1px solid #f1f5f9;"
+                             @onclick:stopPropagation="true">
+                            <a href="@q.FilePath" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:0.4rem;
+                                                  padding:0.4rem 0.85rem;border-radius:8px;
+                                                  background:#fef2f2;color:#dc2626;font-weight:700;
+                                                  font-size:0.78rem;text-decoration:none;
+                                                  border:1px solid #fecaca;transition:all 0.18s ease;">
+                                📄 Ver PDF — @(q.FileName ?? "Cotización")
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="margin-top:0.65rem;font-size:0.76rem;
+                                                color:#cbd5e1;font-style:italic;">
+                            Sin PDF adjunto
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Resumen de selección -->
+        @if (_selectedQuoteId.HasValue)
+        {
+            var sel = _request.Quotes.First(q => q.Id == _selectedQuoteId);
+            bool requiresPF = _request.InvoiceType == InvoiceType.Comercial
+            || sel.Amount >= 5000;
+
+            <div style="padding:1rem 1.25rem;border-radius:16px;
+                                display:flex;align-items:flex-start;gap:1rem;
+                                background:#f0fdf4;border:1.5px solid #86efac;">
+                <span style="font-size:1.3rem;flex-shrink:0;">✅</span>
+                <div style="flex:1;">
+                    <div style="font-weight:800;color:#15803d;font-size:0.96rem;">
+                        Seleccionaste: @sel.ProviderName —
+                        $@sel.Amount.ToString("N2") USD
+                    </div>
+
+                    @if (requiresPF)
+                    {
+                        <div style="margin-top:0.4rem;padding:0.6rem 0.85rem;
+                                                border-radius:10px;font-size:0.84rem;font-weight:700;
+                                                background:@(_request.InvoiceType == InvoiceType.Comercial
+                                                                     ? "#ede9fe" : "#fef3c7");
+                                    color:@(_request.InvoiceType == InvoiceType.Comercial
+                                                         ? "#5b21b6" : "#92400e");">
+                @if (_request.InvoiceType == InvoiceType.Comercial)
+                            {
+                                <span>
+                                    📋 Factura comercial — el siguiente paso es completar
+                                    el formulario de Premium Freight.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    ⚠️ Cotización ≥ $5,000 USD — el siguiente paso es
+                                    completar el formulario de Premium Freight.
+                                </span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="margin-top:0.3rem;font-size:0.82rem;color:#16a34a;">
+                            La solicitud pasará directamente a aprobación de Trade Staff.
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Error -->
+        @if (!string.IsNullOrEmpty(_errorMsg))
+        {
+            <div style="padding:0.85rem 1rem;background:#fef2f2;border:1px solid #fecaca;
+                                border-radius:14px;color:#dc2626;font-weight:700;">
+                ⚠️ @_errorMsg
+            </div>
+        }
+
+        <!-- Navegación -->
+        <div class="form-nav">
+            <a href="/requests/@Id" class="btn-nav prev">← Volver</a>
+            <button type="button" class="btn-nav next" @onclick="Confirm"
+                    disabled="@(!_selectedQuoteId.HasValue || _submitting)">
+                @if (_submitting)
+                {
+                    <span>Procesando...</span>
+                }
+                else
+                {
+
+                    <span>Confirmar Selección →</span>
+                }
+            </button>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ShippingRequest? _request;
+    private bool _loading = true;
+    private bool _submitting = false;
+    private string _errorMsg = string.Empty;
+    private int? _selectedQuoteId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _request = await RequestService.GetByIdAsync(Id);
+
+        // Pre-seleccionar si ya había una cotización elegida
+        if (_request?.Quotes.Any(q => q.IsSelected) == true)
+            _selectedQuoteId = _request.Quotes.First(q => q.IsSelected).Id;
+
+        _loading = false;
+    }
+
+    private void ChooseQuote(int quoteId)
+    {
+        _selectedQuoteId = quoteId;
+        _errorMsg = string.Empty;
+    }
+
+    private async Task Confirm()
+    {
+        if (!_selectedQuoteId.HasValue) return;
+
+        _submitting = true;
+        _errorMsg = string.Empty;
+
+        try
+        {
+            await QuoteService.SelectQuoteAsync(
+                Id, _selectedQuoteId.Value, CurrentUser.Email);
+
+            var updated = await RequestService.GetByIdAsync(Id);
+
+            if (updated?.Status == RequestStatus.PendingPremiumFreight)
+                Nav.NavigateTo($"/requests/{Id}/premium-freight");
+            else
+                Nav.NavigateTo($"/requests/{Id}");
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Error: {ex.Message}";
+            _submitting = false;
+        }
+    }
+}

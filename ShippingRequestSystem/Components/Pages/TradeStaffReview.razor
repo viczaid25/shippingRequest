@@ -1,0 +1,612 @@
+﻿@page "/requests/{Id:int}/staff-review"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.ViewModels
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@using Microsoft.AspNetCore.Components.Forms
+@inject IShippingRequestService RequestService
+@inject IQuoteService QuoteService
+@inject FileService FileService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Revisión Trade Staff — #@Id</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (_request is null)
+{
+    <div class="empty-state compact">Solicitud no encontrada.</div>
+}
+else if (!CurrentUser.IsTradeStaff)
+{
+    <div class="empty-state compact">
+        ⛔ No tienes permiso para acceder a esta sección.
+    </div>
+}
+else
+{
+    <div class="detail-page">
+
+        <!-- Hero -->
+        <div class="detail-hero">
+            <div class="detail-hero-left">
+                <div class="detail-hero-id">📋 REVISIÓN TRADE STAFF · #@_request.Id</div>
+                <h1>@_request.RecipientBusinessName</h1>
+                <div style="color:rgba(255,255,255,0.7);font-size:0.92rem;">
+                    @_request.RequestorName · @_request.Department
+                </div>
+            </div>
+            <div class="detail-hero-right">
+                <StatusBadge Status="@_request.Status" />
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <div class="info-card-icon">📋</div>
+                <h3 class="info-card-title">Resumen de la Solicitud</h3>
+            </div>
+            <div class="info-card-body"
+                 style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
+                <InfoRow Label="Solicitante" Value="@_request.RequestorName" />
+                <InfoRow Label="Departamento" Value="@_request.Department" />
+                <InfoRow Label="Propósito" Value="@_request.ShipmentPurpose" />
+                <InfoRow Label="Destinatario" Value="@_request.RecipientBusinessName" />
+                <InfoRow Label="Vía" Value="@_request.ShippingWay.ToDisplayName()" />
+                <InfoRow Label="Incoterm" Value="@_request.Incoterm" />
+            </div>
+        </div>
+
+        <!-- IGI e Incoterm -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <div class="info-card-icon">📊</div>
+                <h3 class="info-card-title">Porcentaje IGI e Incoterm</h3>
+            </div>
+            <div class="info-card-body" style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+                <div class="field-group" style="max-width:280px;">
+                    <label class="field-label">
+                        % IGI <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="number" class="field-input @(_igiError ? "invalid" : "")"
+                           step="0.01" min="0" max="100"
+                           placeholder="0.00" @bind="_igi" />
+                    @if (_igiError)
+                    {
+                        <span class="field-error">El % IGI debe ser mayor a 0</span>
+                    }
+                </div>
+                <div class="field-group" style="max-width:280px;">
+                    <label class="field-label">
+                        Incoterm Aplicable <span style="color:#ef4444;">*</span>
+                    </label>
+                    <select class="field-select @(_incotermError ? "invalid" : "")" @bind="_incoterm">
+                        <option value="">Seleccionar...</option>
+                        <option>EXW</option>
+                        <option>FCA</option>
+                        <option>FAS</option>
+                        <option>FOB</option>
+                        <option>CFR</option>
+                        <option>CIF</option>
+                        <option>CPT</option>
+                        <option>CIP</option>
+                        <option>DAP</option>
+                        <option>DPU</option>
+                        <option>DDP</option>
+                    </select>
+                    @if (_incotermError)
+                    {
+                        <span class="field-error">Debes asignar un Incoterm</span>
+                    }
+                    <div style="font-size:0.78rem;color:#64748b;margin-top:0.35rem;">
+                        Tramos marcados por el solicitante:
+                        @(_request.RequiresLocalOriginFreight ? "Local Origen · " : "")
+                        @(_request.RequiresLocalDestinationFreight ? "Local Destino · " : "")
+                        @(_request.RequiresInternationalFreight ? "Internacional" : "")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificado de Origen (COO) -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <div class="info-card-icon">📜</div>
+                <h3 class="info-card-title">Certificado de Origen (COO)</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="toggle-row @(_hasCoo ? "checked" : "")"
+                     @onclick="() => _hasCoo = !_hasCoo">
+                    <input type="checkbox" checked="@_hasCoo" style="accent-color:#1d4ed8;" />
+                    <div>
+                        <div class="toggle-label">Este envío requiere Certificado de Origen</div>
+                        <div class="toggle-desc">Actívalo y sube el documento correspondiente</div>
+                    </div>
+                </div>
+
+                @if (_hasCoo)
+                {
+                    <div class="field-group" style="margin-top:0.85rem;max-width:420px;">
+                        <label class="field-label">
+                            Documento COO (PDF) <span style="color:#ef4444;">*</span>
+                        </label>
+
+                        @if (_cooHasFile)
+                        {
+                            <div style="display:flex;align-items:center;gap:0.75rem;
+                                        padding:0.75rem 1rem;background:#f0fdf4;
+                                        border:1.5px solid #86efac;border-radius:12px;">
+                                <span style="font-size:1.2rem;">📄</span>
+                                <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+                                            white-space:nowrap;font-weight:700;color:#15803d;
+                                            font-size:0.85rem;">
+                                    @(_cooFile?.Name ?? "Documento cargado")
+                                </div>
+                                <button type="button" class="pkg-btn del" style="padding:0.3rem 0.65rem;"
+                                        @onclick="ClearCooFile">
+                                    Cambiar
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="border:2px dashed @(_cooError != null ? "#fca5a5" : "#cbd5e1");
+                                        border-radius:12px;padding:1.1rem;text-align:center;background:#fff;">
+                                <InputFile OnChange="OnCooFileSelected" accept=".pdf"
+                                           style="display:none;" id="coo-file" />
+                                <label for="coo-file"
+                                       style="display:inline-flex;align-items:center;gap:0.4rem;
+                                              padding:0.5rem 1.1rem;border-radius:10px;background:#eff6ff;
+                                              color:#1d4ed8;font-weight:700;font-size:0.84rem;
+                                              cursor:pointer;border:1.5px solid #bfdbfe;">
+                                    📂 Seleccionar PDF
+                                </label>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(_cooError))
+                        {
+                            <span class="field-error">@_cooError</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Cotizaciones con PDF -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <div class="info-card-icon">💲</div>
+                <h3 class="info-card-title">Cotizaciones de Envío</h3>
+                <span style="font-size:0.82rem;color:#64748b;margin-left:auto;">
+                    Mínimo 3 · cada una requiere su PDF
+                </span>
+            </div>
+            <div class="info-card-body">
+                <div style="display:flex;flex-direction:column;gap:1.25rem;">
+                    @for (int i = 0; i < _quotes.Count; i++)
+                    {
+                        int idx = i;
+                        var q = _quotes[idx];
+
+                        <div style="padding:1.1rem;background:#f8fafc;
+                                            border:1.5px solid #e2e8f0;border-radius:16px;">
+
+                            <!-- Encabezado de la cotización -->
+                            <div style="display:flex;align-items:center;
+                                                justify-content:space-between;margin-bottom:1rem;">
+                                <span style="font-weight:800;font-size:0.88rem;color:#0f172a;">
+                                    Cotización @(idx + 1)
+                                </span>
+                                @if (_quotes.Count > 3)
+                                {
+                                    <button type="button" class="pkg-btn del"
+                                            @onclick="() => RemoveQuote(idx)">
+                                        ✕ Eliminar
+                                    </button>
+                                }
+                            </div>
+
+                            <!-- Campos de datos -->
+                            <div style="display:grid;grid-template-columns:1fr 160px 1fr;
+                                                gap:0.85rem;margin-bottom:1rem;">
+                                <div class="field-group">
+                                    <label class="field-label">
+                                        Proveedor <span style="color:#ef4444;">*</span>
+                                    </label>
+                                    <input type="text" class="field-input"
+                                           placeholder="Nombre del proveedor"
+                                           @bind="q.ProviderName" @bind:event="oninput" />
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">
+                                        Monto (USD) <span style="color:#ef4444;">*</span>
+                                    </label>
+                                    <input type="number" class="field-input"
+                                           step="0.01" min="0" placeholder="0.00"
+                                           @bind="q.Amount" @bind:event="oninput" />
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Notas / Condiciones</label>
+                                    <input type="text" class="field-input"
+                                           placeholder="Tiempo de entrega, transit time..."
+                                           @bind="q.Notes" @bind:event="oninput" />
+                                </div>
+                            </div>
+
+                            <!-- Subida de PDF -->
+                            <div class="field-group">
+                                <label class="field-label">
+                                    PDF de Cotización <span style="color:#ef4444;">*</span>
+                                </label>
+
+                                @if (q.HasFile)
+                                {
+                                    <!-- Archivo cargado o ya guardado -->
+                                    <div style="display:flex;align-items:center;gap:0.75rem;
+                                                            padding:0.75rem 1rem;background:#f0fdf4;
+                                                            border:1.5px solid #86efac;border-radius:12px;">
+                                        <span style="font-size:1.2rem;">📄</span>
+                                        <div style="flex:1;min-width:0;">
+                                            <div style="font-weight:700;color:#15803d;
+                                                                    font-size:0.88rem;
+                                                                    overflow:hidden;text-overflow:ellipsis;
+                                                                    white-space:nowrap;">
+                                                @(q.File?.Name ?? q.SavedFileName)
+                                            </div>
+                                            @if (q.File is not null)
+                                            {
+                                                <div style="font-size:0.76rem;color:#64748b;">
+                                                    @((q.File.Size / 1024.0).ToString("N1")) KB
+                                                </div>
+                                            }
+                                        </div>
+                                        <button type="button" class="pkg-btn del"
+                                                style="padding:0.3rem 0.65rem;"
+                                                @onclick="() => ClearFile(idx)">
+                                            Cambiar
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Zona de carga -->
+                                    <div style="border:2px dashed @(q.FileError != null ? "#fca5a5" : "#cbd5e1");
+                                                            border-radius:12px;padding:1.25rem;
+                                                            text-align:center;background:#fff;
+                                                            transition:all 0.18s ease;">
+                                        <div style="font-size:1.5rem;margin-bottom:0.4rem;">📎</div>
+                                        <div style="font-size:0.84rem;color:#64748b;
+                                                                margin-bottom:0.65rem;">
+                                            Arrastra el PDF aquí o haz clic para seleccionar
+                                        </div>
+                                        <InputFile OnChange="e => OnFileSelected(e, idx)"
+                                                   accept=".pdf"
+                                                   style="display:none;"
+                                                   id="@($"file-{idx}")" />
+                                        <label for="@($"file-{idx}")"
+                                               style="display:inline-flex;align-items:center;
+                                                                  gap:0.4rem;padding:0.5rem 1.1rem;
+                                                                  border-radius:10px;background:#eff6ff;
+                                                                  color:#1d4ed8;font-weight:700;
+                                                                  font-size:0.84rem;cursor:pointer;
+                                                                  border:1.5px solid #bfdbfe;
+                                                                  transition:all 0.18s ease;">
+                                            📂 Seleccionar PDF
+                                        </label>
+                                        <div style="font-size:0.72rem;color:#94a3b8;
+                                                                margin-top:0.5rem;">
+                                            Solo PDF · Máx. 10 MB
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(q.FileError))
+                                {
+                                    <span class="field-error">@q.FileError</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (_quotes.Count < 5)
+                {
+                    <button type="button" class="pkg-btn add"
+                            style="margin-top:1rem;padding:0.6rem 1.2rem;border-radius:12px;"
+                            @onclick="AddQuote">
+                        + Agregar Cotización
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMsg))
+        {
+            <div style="padding:0.85rem 1rem;background:#fef2f2;border:1px solid #fecaca;
+                                border-radius:14px;color:#dc2626;font-weight:700;">
+                ⚠️ @_errorMsg
+            </div>
+        }
+
+        <div class="form-nav">
+            <a href="/requests/@Id" class="btn-nav prev">← Volver al Detalle</a>
+            <button type="button" class="btn-nav submit" @onclick="Submit"
+                    disabled="@_submitting">
+                @if (_submitting)
+                {
+                    <span>⏳ Guardando archivos...</span>
+                }
+                else
+                {
+                    <span>✓ Guardar y Enviar al Usuario</span>
+                }
+            </button>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ShippingRequest? _request = null;
+    private bool _loading = true;
+    private bool _submitting = false;
+    private bool _igiError = false;
+    private bool _incotermError = false;
+    private string _errorMsg = string.Empty;
+    private decimal _igi = 0;
+    private string _incoterm = string.Empty;
+    private List<QuoteViewModel> _quotes = new();
+
+    private bool _hasCoo = false;
+    private IBrowserFile? _cooFile;
+    private bool _cooHasFile = false;
+    private string? _cooSavedFilePath;
+    private string? _cooError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _request = await RequestService.GetByIdAsync(Id);
+
+        if (_request is not null)
+        {
+            _igi = _request.IgiPercentage;
+            _incoterm = _request.Incoterm ?? string.Empty;
+            _hasCoo = _request.HasCOO;
+            _cooSavedFilePath = _request.CooDocumentPath;
+            _cooHasFile = !string.IsNullOrEmpty(_cooSavedFilePath);
+
+            // Si ya tiene cotizaciones guardadas, cargarlas
+            if (_request.Quotes.Any())
+            {
+                _quotes = _request.Quotes.Select(q => new QuoteViewModel
+                {
+                    ProviderName = q.ProviderName,
+                    Amount = q.Amount,
+                    Notes = q.Notes,
+                    SavedFilePath = q.FilePath,
+                    SavedFileName = q.FileName
+                }).ToList();
+            }
+            else
+            {
+                InitDefaultQuotes();
+            }
+        }
+
+        _loading = false;
+    }
+
+    private void InitDefaultQuotes()
+    {
+        _quotes = new List<QuoteViewModel>
+        {
+            new QuoteViewModel(),
+            new QuoteViewModel(),
+            new QuoteViewModel()
+        };
+    }
+
+    private void AddQuote() => _quotes.Add(new QuoteViewModel());
+
+    private void RemoveQuote(int idx)
+    {
+        if (_quotes.Count > 3)
+            _quotes.RemoveAt(idx);
+    }
+
+    private void ClearFile(int idx)
+    {
+        _quotes[idx].File = null;
+        _quotes[idx].FileName = null;
+        _quotes[idx].SavedFilePath = null;
+        _quotes[idx].SavedFileName = null;
+        _quotes[idx].FileError = null;
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e, int idx)
+    {
+        var file = e.File;
+        _quotes[idx].FileError = null;
+
+        if (file is null) return;
+
+        // Validar extensión
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            _quotes[idx].FileError = "Solo se permiten archivos PDF.";
+            return;
+        }
+
+        // Validar tamaño (10 MB)
+        if (file.Size > 10 * 1024 * 1024)
+        {
+            _quotes[idx].FileError = "El archivo excede el tamaño máximo de 10 MB.";
+            return;
+        }
+
+        _quotes[idx].File = file;
+        _quotes[idx].FileName = file.Name;
+    }
+
+    private void OnCooFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        _cooError = null;
+        if (file is null) return;
+
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            _cooError = "Solo se permiten archivos PDF.";
+            return;
+        }
+
+        if (file.Size > 10 * 1024 * 1024)
+        {
+            _cooError = "El archivo excede el tamaño máximo de 10 MB.";
+            return;
+        }
+
+        _cooFile = file;
+        _cooHasFile = true;
+    }
+
+    private void ClearCooFile()
+    {
+        _cooFile = null;
+        _cooHasFile = false;
+        _cooSavedFilePath = null;
+        _cooError = null;
+    }
+
+    private async Task Submit()
+    {
+        _errorMsg = string.Empty;
+        _igiError = false;
+        _incotermError = false;
+        bool hasErrors = false;
+
+        // Validar IGI
+        if (_igi <= 0)
+        {
+            _igiError = true;
+            hasErrors = true;
+        }
+
+        // Validar Incoterm
+        if (string.IsNullOrWhiteSpace(_incoterm))
+        {
+            _incotermError = true;
+            hasErrors = true;
+        }
+
+        // Validar documento COO si se marcó como requerido
+        _cooError = null;
+        if (_hasCoo && _cooFile is null && string.IsNullOrEmpty(_cooSavedFilePath))
+        {
+            _cooError = "El documento COO es requerido.";
+            hasErrors = true;
+        }
+
+        // Validar mínimo 3 cotizaciones
+        if (_quotes.Count < 3)
+        {
+            _errorMsg = "Se requieren mínimo 3 cotizaciones.";
+            return;
+        }
+
+        // Validar cada cotización
+        foreach (var q in _quotes)
+        {
+            q.FileError = null;
+
+            if (string.IsNullOrWhiteSpace(q.ProviderName))
+            {
+                q.FileError = "El nombre del proveedor es requerido.";
+                hasErrors = true;
+            }
+
+            if (q.Amount <= 0)
+            {
+                q.FileError = "El monto debe ser mayor a 0.";
+                hasErrors = true;
+            }
+
+            // PDF requerido si no tiene uno ya guardado
+            if (q.File is null && string.IsNullOrEmpty(q.SavedFilePath))
+            {
+                q.FileError = "El PDF de la cotización es requerido.";
+                hasErrors = true;
+            }
+        }
+
+        if (hasErrors) return;
+
+        _submitting = true;
+        StateHasChanged();
+
+        try
+        {
+            // Construir ShippingQuote guardando los PDFs
+            var quotesToSave = new List<ShippingQuote>();
+
+            foreach (var qVm in _quotes)
+            {
+                string? filePath = qVm.SavedFilePath;
+                string? fileName = qVm.SavedFileName;
+
+                // Si hay un archivo nuevo, guardarlo
+                if (qVm.File is not null)
+                {
+                    const long maxSize = 10 * 1024 * 1024;
+                    await using var stream = qVm.File.OpenReadStream(maxSize);
+                    var saved = await FileService.SaveQuotePdfAsync(
+                        stream, qVm.File.Name, qVm.File.Size);
+
+                    if (saved.HasValue)
+                    {
+                        filePath = saved.Value.filePath;
+                        fileName = saved.Value.fileName;
+                    }
+                }
+
+                quotesToSave.Add(new ShippingQuote
+                {
+                    ProviderName = qVm.ProviderName,
+                    Amount = qVm.Amount,
+                    Notes = qVm.Notes,
+                    FilePath = filePath,
+                    FileName = fileName
+                });
+            }
+
+            // Subir documento COO si es nuevo
+            string? cooPath = _cooSavedFilePath;
+            if (_hasCoo && _cooFile is not null)
+            {
+                const long maxCooSize = 10 * 1024 * 1024;
+                await using var cooStream = _cooFile.OpenReadStream(maxCooSize);
+                var savedCoo = await FileService.SaveCooDocumentAsync(
+                    cooStream, _cooFile.Name, _cooFile.Size);
+                cooPath = savedCoo.filePath;
+            }
+
+            await QuoteService.SaveIgiAndQuotesAsync(
+                Id, _igi, _incoterm, _hasCoo, cooPath, quotesToSave);
+            Nav.NavigateTo($"/requests/{Id}");
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Error al guardar: {ex.Message}";
+            _submitting = false;
+        }
+    }
+}

@@ -1,0 +1,314 @@
+﻿@page "/admin/admins"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject IPermissionService PermissionService
+@inject CurrentUserService CurrentUser
+@rendermode InteractiveServer
+
+<PageTitle>Administradores del Sistema</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div class="empty-state compact">⛔ Acceso restringido.</div>
+}
+else
+{
+    <div class="index-page">
+
+        <div class="index-hero" style="padding:1.25rem 1.5rem;">
+            <div class="index-hero-left">
+                <div class="index-kicker">👑 Administradores</div>
+                <h1 style="font-size:1.6rem;">Gestión de Administradores</h1>
+                <p class="hero-text">
+                    Los administradores pueden gestionar permisos y configuración del sistema.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.75rem;align-self:center;">
+                <a href="/admin" class="btn-nav prev"
+                   style="text-decoration:none;display:inline-flex;align-items:center;">
+                    ← Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-head">
+                <div>
+                    <h2>Administradores Activos</h2>
+                    <p class="panel-subtitle">@_admins.Count administrador(es)</p>
+                </div>
+                <button type="button"
+                        style="padding:0.5rem 1rem;border-radius:10px;background:#eff6ff;
+                               color:#1d4ed8;font-weight:700;font-size:0.84rem;
+                               border:1.5px solid #bfdbfe;cursor:pointer;"
+                        @onclick="OpenAddModal">
+                    + Agregar Administrador
+                </button>
+            </div>
+
+            @if (!_admins.Any())
+            {
+                <div class="empty-state compact">Sin administradores configurados</div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    @foreach (var a in _admins)
+                    {
+                        bool isMe = a.UserEmail.Equals(
+                            CurrentUser.Email, StringComparison.OrdinalIgnoreCase);
+
+                        <div style="display:flex;align-items:center;gap:1rem;
+                                    padding:0.85rem 1rem;border-radius:14px;
+                                    background:#f8fafc;border:1px solid #e2e8f0;">
+                            <div style="width:38px;height:38px;border-radius:50%;
+                                        background:linear-gradient(135deg,#f59e0b,#d97706);
+                                        display:flex;align-items:center;justify-content:center;
+                                        color:#fff;font-weight:800;font-size:0.82rem;
+                                        flex-shrink:0;">
+                                👑
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:800;color:#0f172a;font-size:0.92rem;">
+                                    @a.UserName
+                                    @if (isMe)
+                                    {
+                                        <span style="margin-left:0.5rem;font-size:0.72rem;
+                                                     background:#fef3c7;color:#d97706;
+                                                     padding:0.15rem 0.5rem;border-radius:999px;
+                                                     font-weight:900;">
+                                            Tú
+                                        </span>
+                                    }
+                                </div>
+                                <div style="font-size:0.78rem;color:#64748b;">
+                                    @a.UserEmail
+                                    @if (!string.IsNullOrEmpty(a.UserDepartment))
+                                    {
+                                        <span> · @a.UserDepartment</span>
+                                    }
+                                </div>
+                            </div>
+                            @if (!isMe)
+                            {
+                                <button type="button"
+                                        style="padding:0.35rem 0.75rem;border-radius:8px;
+                                               background:#fef2f2;color:#dc2626;font-weight:700;
+                                               font-size:0.78rem;border:1px solid #fecaca;
+                                               cursor:pointer;"
+                                        @onclick="() => ConfirmRemove(a)">
+                                    Quitar
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+<!-- Modal agregar admin -->
+@if (_showAddModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">👑</div>
+            <div class="modal-title">Agregar Administrador</div>
+            <div class="modal-sub">Busca al usuario que será administrador del sistema</div>
+
+            <input type="text" class="field-input"
+                   placeholder="Nombre, email o login..."
+                   value="@_searchQuery"
+                   @oninput="OnSearchInput" />
+            </div>
+
+            @if (_searching)
+            {
+                <div style="text-align:center;padding:1rem;color:#64748b;font-size:0.84rem;">
+                    Buscando...
+                </div>
+            }
+            else if (_searchResults.Any())
+            {
+                <div style="max-height:200px;overflow-y:auto;border:1px solid #e2e8f0;
+                            border-radius:12px;margin-bottom:0.75rem;">
+                    @foreach (var u in _searchResults)
+                    {
+                        bool isSel = _selectedUser?.Id == u.Id;
+                        <div style="display:flex;align-items:center;gap:0.75rem;
+                                    padding:0.75rem 1rem;cursor:pointer;
+                                    background:@(isSel ? "#eff6ff" : "#fff");
+                                    border-bottom:1px solid #f1f5f9;"
+                             @onclick="() => _selectedUser = u">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;color:#0f172a;font-size:0.88rem;">
+                                    @(u.Username ?? u.PcLoginId)
+                                </div>
+                                <div style="font-size:0.76rem;color:#64748b;">
+                                    @u.Email · @u.Department
+                                </div>
+                            </div>
+                            @if (isSel)
+                            {
+                                <span style="color:#1d4ed8;font-weight:900;">✓</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_modalError))
+            {
+                <div style="padding:0.6rem 0.85rem;background:#fef2f2;
+                            border:1px solid #fecaca;border-radius:10px;
+                            color:#dc2626;font-size:0.82rem;font-weight:700;
+                            margin-bottom:0.75rem;">
+                    ⚠️ @_modalError
+                </div>
+            }
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" @onclick="CloseModal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-approve"
+                        disabled="@(_selectedUser is null || _saving)"
+                        @onclick="AddAdmin">
+                    @if (_saving) { <span>Guardando...</span> }
+                    else { <span>✓ Agregar Admin</span> }
+                </button>
+            </div>
+    </div>
+}
+
+<!-- Modal confirmar eliminar -->
+@if (_showRemoveModal && _adminToRemove is not null)
+{
+    <div class="modal-overlay" @onclick="CloseRemoveModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚠️</div>
+            <div class="modal-title">Quitar Administrador</div>
+            <div class="modal-sub">
+                ¿Quitar a <strong>@_adminToRemove.UserName</strong>
+                como administrador del sistema?
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" @onclick="CloseRemoveModal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-reject" @onclick="RemoveAdmin"
+                        disabled="@_saving">
+                    @if (_saving) { <span>Quitando...</span> }
+                    else { <span>✕ Quitar</span> }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool   _loading         = true;
+    private bool   _isAdmin         = false;
+    private bool   _showAddModal    = false;
+    private bool   _showRemoveModal = false;
+    private bool   _searching       = false;
+    private bool   _saving          = false;
+    private string _searchQuery     = string.Empty;
+    private string _modalError      = string.Empty;
+
+    private MeaxUser?     _selectedUser  = null;
+    private SystemAdmin?  _adminToRemove = null;
+    private List<MeaxUser>    _searchResults = new();
+    private List<SystemAdmin> _admins        = new();
+
+    private CancellationTokenSource? _searchCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+        _admins  = await PermissionService.GetAdminsAsync();
+        _loading = false;
+    }
+
+    private void OpenAddModal()
+    {
+        _searchQuery   = string.Empty;
+        _searchResults = new();
+        _selectedUser  = null;
+        _modalError    = string.Empty;
+        _showAddModal  = true;
+    }
+
+    private void CloseModal()       => _showAddModal    = false;
+    private void CloseRemoveModal() => _showRemoveModal = false;
+
+    private void ConfirmRemove(SystemAdmin admin)
+    {
+        _adminToRemove   = admin;
+        _showRemoveModal = true;
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _searchQuery  = e.Value?.ToString() ?? string.Empty;
+        _selectedUser = null;
+
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token  = _searchCts.Token;
+
+        if (_searchQuery.Length < 2) { _searchResults = new(); return; }
+
+        _searching = true;
+        StateHasChanged();
+
+        await Task.Delay(300, token).ContinueWith(_ => { },
+            TaskContinuationOptions.OnlyOnCanceled);
+
+        if (token.IsCancellationRequested) return;
+
+        _searchResults = await PermissionService.SearchUsersAsync(_searchQuery);
+        _searching     = false;
+        StateHasChanged();
+    }
+
+    private async Task AddAdmin()
+    {
+        if (_selectedUser is null) return;
+        _saving = true;
+        _modalError = string.Empty;
+
+        bool ok = await PermissionService.AddAdminAsync(_selectedUser);
+        if (!ok)
+        {
+            _modalError = "Este usuario ya es administrador.";
+            _saving     = false;
+            return;
+        }
+
+        _admins       = await PermissionService.GetAdminsAsync();
+        _saving       = false;
+        _showAddModal = false;
+        StateHasChanged();
+    }
+
+    private async Task RemoveAdmin()
+    {
+        if (_adminToRemove is null) return;
+        _saving = true;
+        await PermissionService.RemoveAdminAsync(_adminToRemove.Id);
+        _admins          = await PermissionService.GetAdminsAsync();
+        _saving          = false;
+        _showRemoveModal = false;
+        _adminToRemove   = null;
+        StateHasChanged();
+    }
+}

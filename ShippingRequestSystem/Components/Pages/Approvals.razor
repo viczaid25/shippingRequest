@@ -1,0 +1,123 @@
+﻿@page "/approvals"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@using ShippingRequestSystem.Helpers
+@inject IApprovalService ApprovalService
+@inject CurrentUserService CurrentUser
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Aprobaciones Pendientes</PageTitle>
+
+<div class="approvals-page">
+
+    <div class="index-hero" style="padding:1.25rem 1.5rem;">
+        <div class="index-hero-left">
+            <div class="index-kicker">✅ Aprobaciones</div>
+            <h1 style="font-size:1.6rem;margin-bottom:0.35rem;">Pendientes de Revisión</h1>
+            <p class="hero-text">
+                Solicitudes que requieren tu firma como aprobador.
+            </p>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="index-loading" style="grid-template-columns:1fr;">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="index-skeleton" style="height:80px;border-radius:20px;"></div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Info del usuario actual -->
+        <div class="panel-card" style="padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                            flex-wrap:wrap;gap:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="width:40px;height:40px;border-radius:50%;
+                                    background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+                                    display:flex;align-items:center;justify-content:center;
+                                    color:#fff;font-weight:800;font-size:0.9rem;flex-shrink:0;">
+                        @(CurrentUser.DisplayName.Length >= 2
+                                            ? CurrentUser.DisplayName[..2].ToUpper() : "?")
+                </div>
+                <div>
+                    <div style="font-weight:800;color:#0f172a;font-size:0.92rem;">
+                        @CurrentUser.DisplayName
+                    </div>
+                    <div style="font-size:0.8rem;color:#64748b;">
+                        @CurrentUser.Email · @CurrentUser.Department
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:0.82rem;color:#64748b;font-weight:600;">
+                Mostrando aprobaciones para tu cuenta
+            </div>
+        </div>
+    </div>
+
+    @if (!_steps.Any())
+        {
+            <div class="panel-card">
+                <div class="empty-state compact">
+                    ✅ Sin aprobaciones pendientes para tu rol
+                </div>
+            </div>
+        }
+        else
+        {
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                @foreach (var step in _steps)
+                {
+                    var req = step.ShippingRequest;
+                    <a href="/requests/@req.Id" class="approval-card">
+                        <div class="approval-card-icon">
+                            @req.ToShipmentIcon()
+                        </div>
+                        <div class="approval-card-main">
+                            <div class="approval-card-title">
+                                #@req.Id — @req.RecipientBusinessName
+                            </div>
+                            <div class="approval-card-sub">
+                                @req.Department · @req.BusinessUnit ·
+                                @req.ShippingWay.ToDisplayName() ·
+                                <strong>Paso: @step.RoleName</strong>
+                            </div>
+                        </div>
+                        <div class="approval-card-meta">
+                            <small style="color:#64748b;font-weight:700;">
+                                @req.RequestDate.ToString("dd/MM/yyyy")
+                            </small>
+                            <StatusBadge Status="@req.Status" />
+                            @if (req.ApproximateCost >= 5000)
+                            {
+                                <span style="font-size:0.72rem;font-weight:900;color:#d97706;">
+                                    ⭐ $@req.ApproximateCost.ToString("N0")
+                                </span>
+                            }
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<ApprovalStep> _steps = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync() => await LoadSteps();
+
+    private async Task LoadSteps()
+    {
+        _loading = true;
+        // Usa el email real del usuario autenticado — sin selector manual
+        _steps = await ApprovalService
+            .GetPendingStepsForApproverAsync(CurrentUser.Email);
+        _loading = false;
+    }
+}

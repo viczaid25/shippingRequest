@@ -1,0 +1,85 @@
+﻿@using ShippingRequestSystem.Models
+
+@if (Visible)
+{
+    <div class="modal-overlay" @onclick="Cancel">
+        <div class="modal-box" @onclick:stopPropagation="true">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">
+                @(IsApprove ? "✅" : "❌")
+            </div>
+            <div class="modal-title">
+                @(IsApprove ? "Confirmar Aprobación" : "Confirmar Rechazo")
+            </div>
+            <div class="modal-sub">
+                Solicitud <strong>#@RequestId</strong> —
+                @(IsApprove ? "Esta acción avanzará la solicitud al siguiente paso."
+                            : "Esta acción rechazará la solicitud de forma definitiva.")
+        </div>
+
+            <div class="field-group">
+                <label class="field-label">
+                    Comentarios @(IsApprove ? "(opcional)" : "(requerido)")
+                </label>
+                <textarea class="field-textarea"
+                          placeholder="Escribe tus comentarios..."
+                          @bind="_comments"
+                          style="min-height:90px;"></textarea>
+            @if (_showError)
+                {
+                    <span class="field-error">Los comentarios son requeridos al rechazar</span>
+                }
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="Cancel">Cancelar</button>
+                <button class="@(IsApprove ? "btn-approve" : "btn-reject")"
+                        @onclick="Confirm"
+                        disabled="@_processing">
+                    @if (_processing)
+                    {
+                        <span>Procesando...</span>
+                    }
+                    else
+                    {
+
+                        <span>@(IsApprove ? "✓ Aprobar" : "✕ Rechazar")</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public bool IsApprove { get; set; }
+    [Parameter] public int RequestId { get; set; }
+    [Parameter] public int StepId { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<(bool, string?)> OnConfirm { get; set; }
+
+    private string _comments = string.Empty;
+    private bool _showError = false;
+    private bool _processing = false;
+
+    private async Task Confirm()
+    {
+        if (!IsApprove && string.IsNullOrWhiteSpace(_comments))
+        {
+            _showError = true;
+            return;
+        }
+        _processing = true;
+        await OnConfirm.InvokeAsync((IsApprove, _comments));
+        _comments = string.Empty;
+        _showError = false;
+        _processing = false;
+    }
+
+    private async Task Cancel()
+    {
+        _comments = string.Empty;
+        _showError = false;
+        await OnCancel.InvokeAsync();
+    }
+}

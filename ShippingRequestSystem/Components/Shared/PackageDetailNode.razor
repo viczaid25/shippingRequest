@@ -1,0 +1,73 @@
+﻿@using ShippingRequestSystem.Models
+
+<div class="pkg-detail-node @(Package.PackageType == PackageType.Pallet ? "pallet" : "")">
+    <div class="pkg-detail-header @(Package.PackageType == PackageType.Pallet ? "pallet" : "")">
+        <span>@(Package.PackageType == PackageType.Pallet ? "🪵 Pallet" : "📦 Caja")</span>
+        @if (!string.IsNullOrEmpty(Package.Label))
+        {
+            <span style="font-weight:600;color:#64748b;margin-left:0.4rem;">— @Package.Label</span>
+        }
+        <span style="font-weight:600;color:#94a3b8;font-size:0.8rem;margin-left:auto;">
+            @Package.Items.Count item(s)
+            @if (Package.ChildBoxes.Any())
+            {
+                <span> · @Package.ChildBoxes.Count caja(s)</span>
+            }
+        </span>
+    </div>
+
+    @if (Package.Items.Any())
+    {
+        <div style="padding:0.75rem 1rem;overflow-x:auto;">
+            <table class="items-table" style="min-width:700px;">
+                <thead>
+                    <tr>
+                        <th>No. Parte</th>
+                        <th>Clase</th>
+                        <th>Descripción</th>
+                        <th>Cant.</th>
+                        <th>UOM</th>
+                        <th>Peso Neto</th>
+                        <th>Peso Bruto</th>
+                        <th>L × W × H</th>
+                        <th>Unit Price</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Package.Items)
+                    {
+                        <tr>
+                            <td style="font-weight:700;">@item.PartNumber</td>
+                            <td>@item.Class</td>
+                            <td>@item.Description</td>
+                            <td style="text-align:center;">@item.Quantity</td>
+                            <td>@item.UOM</td>
+                            <td>@item.NetWeight.ToString("N2")</td>
+                            <td>@item.GrossWeight.ToString("N2")</td>
+                            <td style="white-space:nowrap;font-size:0.78rem;color:#64748b;">
+                                @item.Length × @item.Width × @item.Height cm
+                            </td>
+                            <td>$@item.UnitPrice.ToString("N2")</td>
+                            <td style="font-weight:800;">$@item.Amount.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Package.ChildBoxes.Any())
+    {
+        <div style="padding:0 0.75rem 0.75rem;display:flex;flex-direction:column;gap:0.65rem;">
+            @foreach (var box in Package.ChildBoxes)
+            {
+                <PackageDetailNode Package="box" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ShippingPackage Package { get; set; } = null!;
+}

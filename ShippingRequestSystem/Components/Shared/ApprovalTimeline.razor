@@ -1,0 +1,79 @@
+﻿<h3>ApprovalTimeline</h3>
+
+@code {
+
+}
+@using ShippingRequestSystem.Models
+
+<div class="timeline">
+    @for (int i = 0; i < Steps.Count; i++)
+    {
+        var step = Steps[i];
+        bool isLast = i == Steps.Count - 1;
+        string dotClass = GetDotClass(step);
+        string icon = GetIcon(step);
+
+        <div class="timeline-item">
+            <div class="timeline-left">
+                <div class="timeline-dot @dotClass">@icon</div>
+                @if (!isLast)
+                {
+                    <div class="timeline-line @(step.IsCompleted && step.IsApproved == true ? "done" : "")"></div>
+                }
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-role">
+                    @step.RoleName
+                    @if (!step.IsRequired)
+                    {
+                        <span style="font-size:0.72rem;font-weight:600;color:#94a3b8;margin-left:0.4rem;">
+                            (Opcional)
+                        </span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(step.ApproverName) || !string.IsNullOrEmpty(step.ApproverEmail))
+                {
+                    <div class="timeline-approver">
+                        @step.ApproverName
+                        @if (!string.IsNullOrEmpty(step.ApproverEmail))
+                        {
+                            <span style="color:#94a3b8;"> — @step.ApproverEmail</span>
+                        }
+                    </div>
+                }
+                @if (step.ActionDate.HasValue)
+                {
+                    <div class="timeline-date">
+                        @step.ActionDate.Value.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(step.Comments))
+                {
+                    string commentClass = step.IsApproved == true ? "approved"
+                    : step.IsApproved == false ? "rejected" : "";
+                    <div class="timeline-comment @commentClass">
+                        💬 @step.Comments
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<ApprovalStep> Steps { get; set; } = new();
+
+    private static string GetDotClass(ApprovalStep s)
+    {
+        if (!s.IsRequired && !s.IsCompleted) return "skipped";
+        if (!s.IsCompleted) return "pending";
+        return s.IsApproved == true ? "approved" : "rejected";
+    }
+
+    private static string GetIcon(ApprovalStep s)
+    {
+        if (!s.IsRequired && !s.IsCompleted) return "—";
+        if (!s.IsCompleted) return "⏳";
+        return s.IsApproved == true ? "✓" : "✕";
+    }
+}
