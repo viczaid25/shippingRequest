@@ -1,4 +1,4 @@
-﻿@page "/approvals"
+@page "/approvals"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @using ShippingRequestSystem.Helpers
@@ -11,13 +11,13 @@
 
 <div class="approvals-page">
 
-    <div class="index-hero" style="padding:1.25rem 1.5rem;">
-        <div class="index-hero-left">
-            <div class="index-kicker">✅ Aprobaciones</div>
-            <h1 style="font-size:1.6rem;margin-bottom:0.35rem;">Pendientes de Revisión</h1>
-            <p class="hero-text">
-                Solicitudes que requieren tu firma como aprobador.
-            </p>
+    <div id="mo-banner">
+        <div class="mo-banner-orb mo-banner-orb-1"></div>
+        <div class="mo-banner-orb mo-banner-orb-2"></div>
+        <div id="mo-banner-content">
+            <div id="mo-banner-tag">Aprobaciones</div>
+            <div id="mo-banner-title">Pendientes de Revisión</div>
+            <div id="mo-banner-sub">Solicitudes que requieren tu firma como aprobador.</div>
         </div>
     </div>
 
@@ -63,7 +63,7 @@
         {
             <div class="panel-card">
                 <div class="empty-state compact">
-                    ✅ Sin aprobaciones pendientes para tu rol
+                    Sin aprobaciones pendientes para tu rol
                 </div>
             </div>
         }
@@ -74,9 +74,6 @@
                 {
                     var req = step.ShippingRequest;
                     <a href="/requests/@req.Id" class="approval-card">
-                        <div class="approval-card-icon">
-                            @req.ToShipmentIcon()
-                        </div>
                         <div class="approval-card-main">
                             <div class="approval-card-title">
                                 #@req.Id — @req.RecipientBusinessName
@@ -95,7 +92,7 @@
                             @if (req.ApproximateCost >= 5000)
                             {
                                 <span style="font-size:0.72rem;font-weight:900;color:#d97706;">
-                                    ⭐ $@req.ApproximateCost.ToString("N0")
+                                    $@req.ApproximateCost.ToString("N0")
                                 </span>
                             }
                         </div>

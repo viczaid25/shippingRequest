@@ -1,12 +1,9 @@
-﻿@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Models
 
 @if (Visible)
 {
     <div class="modal-overlay" @onclick="Cancel">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:2rem;margin-bottom:0.5rem;">
-                @(IsApprove ? "✅" : "❌")
-            </div>
             <div class="modal-title">
                 @(IsApprove ? "Confirmar Aprobación" : "Confirmar Rechazo")
             </div>
@@ -16,23 +13,23 @@
                             : "Esta acción rechazará la solicitud de forma definitiva.")
         </div>
 
-            <div class="field-group">
-                <label class="field-label">
+            <div class="mo-form-group">
+                <label class="mo-form-label">
                     Comentarios @(IsApprove ? "(opcional)" : "(requerido)")
                 </label>
-                <textarea class="field-textarea"
+                <textarea class="mo-form-control"
                           placeholder="Escribe tus comentarios..."
                           @bind="_comments"
                           style="min-height:90px;"></textarea>
             @if (_showError)
                 {
-                    <span class="field-error">Los comentarios son requeridos al rechazar</span>
+                    <span class="mo-form-error">Los comentarios son requeridos al rechazar</span>
                 }
             </div>
 
             <div class="modal-actions">
-                <button class="btn-cancel" @onclick="Cancel">Cancelar</button>
-                <button class="@(IsApprove ? "btn-approve" : "btn-reject")"
+                <button class="mo-btn mo-btn-secondary" @onclick="Cancel">Cancelar</button>
+                <button class="@("mo-btn " + (IsApprove ? "mo-btn-success" : "mo-btn-danger"))"
                         @onclick="Confirm"
                         disabled="@_processing">
                     @if (_processing)

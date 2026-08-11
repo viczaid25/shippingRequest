@@ -1,4 +1,4 @@
-﻿@page "/requests/{Id:int}"
+@page "/requests/{Id:int}"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @using ShippingRequestSystem.Helpers
@@ -47,10 +47,10 @@ else
                     @if (_request.PremiumFreightInfo is not null)
                     {
                         <span class="detail-chip premium">
-                            ⭐ @(_request.PremiumFreightInfo.Folio ?? "Premium Freight")
+                            @(_request.PremiumFreightInfo.Folio ?? "Premium Freight")
                         </span>
                     }
-                    <span class="detail-chip">📅 @_request.RequestDate.ToString("dd/MM/yyyy")</span>
+                    <span class="detail-chip">@_request.RequestDate.ToString("dd/MM/yyyy")</span>
                 </div>
             </div>
             <div class="detail-hero-right">
@@ -70,7 +70,7 @@ else
         <!-- ── Acciones contextuales ─────────────────────────────────────────── -->
         <!-- 1. Trade Staff sube IGI + cotizaciones -->
         @if (_request.Status == RequestStatus.PendingTradeStaffQuotes &&
-            CurrentUser.IsTradeStaff)
+            _pendingStep?.RoleName == "Trade Staff")
         {
             <div class="approval-action-card">
                 <div class="approval-action-title">Acción Requerida — Trade Staff</div>
@@ -79,10 +79,10 @@ else
                     el usuario pueda elegir.
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/staff-review" class="btn-approve"
+                    <a href="/requests/@_request.Id/staff-review" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;">
-                        📋 Ingresar IGI y Cotizaciones
+                        Ingresar IGI y Cotizaciones
                     </a>
                 </div>
             </div>
@@ -99,10 +99,10 @@ else
                     Elige la más conveniente para tu envío.
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/select-quote" class="btn-approve"
+                    <a href="/requests/@_request.Id/select-quote" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;">
-                        🧾 Ver y Elegir Cotización
+                        Ver y Elegir Cotización
                     </a>
                 </div>
             </div>
@@ -116,7 +116,7 @@ else
                  style="border-color:#f59e0b;
                                 background:linear-gradient(135deg,#fffbeb,#fef3c7);">
                 <div class="approval-action-title" style="color:#92400e;">
-                    ⭐ Premium Freight Requerido
+                    Premium Freight Requerido
                 </div>
                 <div class="approval-action-sub" style="color:#d97706;">
                     @if (_request.InvoiceType == InvoiceType.Comercial)
@@ -132,11 +132,11 @@ else
                     }
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/premium-freight" class="btn-approve"
+                    <a href="/requests/@_request.Id/premium-freight" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;
                                       background:linear-gradient(135deg,#f59e0b,#d97706);">
-                        ⭐ Completar Premium Freight
+                        Completar Premium Freight
                     </a>
                 </div>
             </div>
@@ -149,7 +149,7 @@ else
             <div class="approval-action-card"
                  style="border-color:#0369a1;background:#e0f2fe;">
                 <div class="approval-action-title" style="color:#0c4a6e;">
-                    ✅ Aprobación Final — Trade Staff
+                    Aprobación Final — Trade Staff
                 </div>
                 <div class="approval-action-sub" style="color:#0369a1;">
                     El usuario eligió la cotización:
@@ -169,10 +169,10 @@ else
                     . Revisa y aprueba o rechaza la solicitud.
                 </div>
                 <div class="approval-btns">
-                    <button class="btn-approve" @onclick="() => OpenModal(true)">
+                    <button class="mo-btn mo-btn-success" @onclick="() => OpenModal(true)">
                         ✓ Aprobar Solicitud
                     </button>
-                    <button class="btn-reject" @onclick="() => OpenModal(false)">
+                    <button class="mo-btn mo-btn-danger" @onclick="() => OpenModal(false)">
                         ✕ Rechazar Solicitud
                     </button>
                 </div>
@@ -193,10 +193,10 @@ else
                     <strong>@_pendingStep.RoleName</strong>
                 </div>
                 <div class="approval-btns">
-                    <button class="btn-approve" @onclick="() => OpenModal(true)">
+                    <button class="mo-btn mo-btn-success" @onclick="() => OpenModal(true)">
                         ✓ Aprobar Solicitud
                     </button>
-                    <button class="btn-reject" @onclick="() => OpenModal(false)">
+                    <button class="mo-btn mo-btn-danger" @onclick="() => OpenModal(false)">
                         ✕ Rechazar Solicitud
                     </button>
                 </div>
@@ -204,7 +204,7 @@ else
         }
 
         <!-- Enviar resumen a Finanzas -->
-        @if (CurrentUser.IsFinanceManager &&
+        @if (_isFinanceManagerForRequest &&
             (_request.Status == RequestStatus.PendingFinanceManager ||
              _request.Status == RequestStatus.Approved))
         {
@@ -215,7 +215,7 @@ else
                     costo, Incoterm y cotización seleccionada) al correo de Finanzas configurado.
                 </div>
                 <div class="approval-btns">
-                    <button class="btn-approve" disabled="@_sendingFinanceEmail"
+                    <button class="mo-btn mo-btn-success" disabled="@_sendingFinanceEmail"
                             @onclick="SendFinanceSummary">
                         @if (_sendingFinanceEmail)
                         {
@@ -223,7 +223,7 @@ else
                         }
                         else
                         {
-                            <span>✉️ Enviar Resumen a Finanzas</span>
+                            <span>Enviar Resumen a Finanzas</span>
                         }
                     </button>
                 </div>
@@ -241,7 +241,6 @@ else
         <div class="detail-grid">
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">👤</div>
                     <h3 class="info-card-title">Solicitante</h3>
                 </div>
                 <div class="info-card-body">
@@ -255,7 +254,6 @@ else
 
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">📍</div>
                     <h3 class="info-card-title">Destinatario</h3>
                 </div>
                 <div class="info-card-body">
@@ -272,7 +270,6 @@ else
         <div class="detail-grid three">
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">🚢</div>
                     <h3 class="info-card-title">Envío</h3>
                 </div>
                 <div class="info-card-body">
@@ -288,7 +285,6 @@ else
 
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">🧾</div>
                     <h3 class="info-card-title">Factura</h3>
                 </div>
                 <div class="info-card-body">
@@ -304,7 +300,7 @@ else
                             <span class="info-row-label">Documento COO</span>
                             <span class="info-row-value">
                                 <a href="@_request.CooDocumentPath" target="_blank"
-                                   style="font-weight:700;color:#1d4ed8;">📄 Ver documento</a>
+                                   style="font-weight:700;color:#1d4ed8;">Ver documento</a>
                             </span>
                         </div>
                     }
@@ -314,7 +310,6 @@ else
 
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">💳</div>
                     <h3 class="info-card-title">Pago</h3>
                 </div>
                 <div class="info-card-body">
@@ -335,7 +330,6 @@ else
         {
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">🏢</div>
                     <h3 class="info-card-title">Comprador</h3>
                 </div>
                 <div class="info-card-body"
@@ -352,7 +346,6 @@ else
         {
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">💲</div>
                     <h3 class="info-card-title">Cotizaciones de Envío</h3>
                 </div>
                 <div class="info-card-body">
@@ -383,7 +376,7 @@ else
                                         <span style="background:#fef3c7;color:#d97706;
                                                                      border-radius:999px;padding:0.2rem 0.6rem;
                                                                      font-size:0.7rem;font-weight:900;">
-                                            ⭐ Premium
+                                            Premium
                                         </span>
                                     }
                                 </div>
@@ -409,7 +402,7 @@ else
                                                               border-radius:8px;background:#fef2f2;
                                                               color:#dc2626;font-weight:700;font-size:0.78rem;
                                                               text-decoration:none;border:1px solid #fecaca;">
-                                        📄 @(q.FileName ?? "Ver PDF")
+                                        @(q.FileName ?? "Ver PDF")
                                     </a>
                                 }
                             </div>
@@ -424,7 +417,6 @@ else
         {
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">📦</div>
                     <h3 class="info-card-title">
                         Paquetes e Items
                         <span style="font-weight:600;color:#64748b;
@@ -452,7 +444,7 @@ else
             <div class="info-card" style="border-color:#f59e0b;">
                 <div class="info-card-header"
                      style="background:#fef3c7;border-color:#fde68a;">
-                    <div class="info-card-icon" style="background:#fde68a;">⭐</div>
+                    
                     <h3 class="info-card-title">Premium Freight</h3>
                     <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;">
                         @if (!string.IsNullOrEmpty(pf.Folio))
@@ -460,7 +452,7 @@ else
                             <span style="font-size:0.82rem;font-weight:800;
                                                      color:#92400e;background:#fde68a;
                                                      padding:0.25rem 0.65rem;border-radius:999px;">
-                                📋 @pf.Folio
+                                @pf.Folio
                             </span>
                         }
                         <span class="premium-badge">≥ $5,000 USD</span>
@@ -480,7 +472,7 @@ else
                         <div>
                             <div style="font-weight:800;font-size:0.82rem;
                                                 color:#92400e;margin-bottom:0.5rem;">
-                                📤 Pick Up
+                                Pick Up
                             </div>
                             <InfoRow Label="Nombre" Value="@pf.PickUpName" />
                             <InfoRow Label="Dirección" Value="@pf.PickUpAddress" />
@@ -489,7 +481,7 @@ else
                         <div>
                             <div style="font-weight:800;font-size:0.82rem;
                                                 color:#92400e;margin-bottom:0.5rem;">
-                                📥 Delivery
+                                Delivery
                             </div>
                             <InfoRow Label="Nombre" Value="@pf.DeliveryName" />
                             <InfoRow Label="Dirección" Value="@pf.DeliveryAddress" />
@@ -510,7 +502,6 @@ else
         {
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-icon">📷</div>
                     <h3 class="info-card-title">Evidencias Fotográficas</h3>
                 </div>
                 <div class="info-card-body"
@@ -544,7 +535,6 @@ else
         <div class="detail-grid">
             <div class="info-card" style="grid-column:span 2;">
                 <div class="info-card-header">
-                    <div class="info-card-icon">🔄</div>
                     <h3 class="info-card-title">Flujo de Aprobación</h3>
                 </div>
                 <div class="info-card-body">
@@ -586,6 +576,7 @@ else
     private bool _sendingFinanceEmail = false;
     private bool _financeEmailOk = false;
     private string _financeEmailMsg = string.Empty;
+    private bool _isFinanceManagerForRequest = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -606,6 +597,11 @@ else
                                           StringComparison.OrdinalIgnoreCase))
                 .OrderBy(s => s.StepOrder)
                 .FirstOrDefault();
+
+            _isFinanceManagerForRequest = _request.ApprovalSteps.Any(s =>
+                s.RoleName == "Finance Manager" &&
+                string.Equals(s.ApproverEmail, _currentUserEmail,
+                              StringComparison.OrdinalIgnoreCase));
         }
 
         _loading = false;

@@ -1,4 +1,4 @@
-﻿@page "/admin/admins"
+@page "/admin/admins"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @inject IPermissionService PermissionService
@@ -15,25 +15,24 @@
 }
 else if (!_isAdmin)
 {
-    <div class="empty-state compact">⛔ Acceso restringido.</div>
+    <div class="empty-state compact">Acceso restringido.</div>
 }
 else
 {
     <div class="index-page">
 
-        <div class="index-hero" style="padding:1.25rem 1.5rem;">
-            <div class="index-hero-left">
-                <div class="index-kicker">👑 Administradores</div>
-                <h1 style="font-size:1.6rem;">Gestión de Administradores</h1>
-                <p class="hero-text">
+        <div style="margin-bottom:0.75rem;">
+            <a href="/admin" class="mo-btn mo-btn-secondary-outline mo-btn-sm">← Volver</a>
+        </div>
+        <div id="mo-banner">
+            <div class="mo-banner-orb mo-banner-orb-1"></div>
+            <div class="mo-banner-orb mo-banner-orb-2"></div>
+            <div id="mo-banner-content">
+                <div id="mo-banner-tag">Administradores</div>
+                <div id="mo-banner-title">Gestión de Administradores</div>
+                <div id="mo-banner-sub">
                     Los administradores pueden gestionar permisos y configuración del sistema.
-                </p>
-            </div>
-            <div style="display:flex;gap:0.75rem;align-self:center;">
-                <a href="/admin" class="btn-nav prev"
-                   style="text-decoration:none;display:inline-flex;align-items:center;">
-                    ← Volver
-                </a>
+                </div>
             </div>
         </div>
 
@@ -43,10 +42,7 @@ else
                     <h2>Administradores Activos</h2>
                     <p class="panel-subtitle">@_admins.Count administrador(es)</p>
                 </div>
-                <button type="button"
-                        style="padding:0.5rem 1rem;border-radius:10px;background:#eff6ff;
-                               color:#1d4ed8;font-weight:700;font-size:0.84rem;
-                               border:1.5px solid #bfdbfe;cursor:pointer;"
+                <button type="button" class="mo-btn mo-btn-primary-outline mo-btn-sm"
                         @onclick="OpenAddModal">
                     + Agregar Administrador
                 </button>
@@ -72,7 +68,7 @@ else
                                         display:flex;align-items:center;justify-content:center;
                                         color:#fff;font-weight:800;font-size:0.82rem;
                                         flex-shrink:0;">
-                                👑
+                                
                             </div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:800;color:#0f172a;font-size:0.92rem;">
@@ -97,11 +93,7 @@ else
                             </div>
                             @if (!isMe)
                             {
-                                <button type="button"
-                                        style="padding:0.35rem 0.75rem;border-radius:8px;
-                                               background:#fef2f2;color:#dc2626;font-weight:700;
-                                               font-size:0.78rem;border:1px solid #fecaca;
-                                               cursor:pointer;"
+                                <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                         @onclick="() => ConfirmRemove(a)">
                                     Quitar
                                 </button>
@@ -120,11 +112,10 @@ else
 {
     <div class="modal-overlay" @onclick="CloseModal">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:1.5rem;margin-bottom:0.5rem;">👑</div>
             <div class="modal-title">Agregar Administrador</div>
             <div class="modal-sub">Busca al usuario que será administrador del sistema</div>
 
-            <input type="text" class="field-input"
+            <input type="text" class="mo-form-control"
                    placeholder="Nombre, email o login..."
                    value="@_searchQuery"
                    @oninput="OnSearchInput" />
@@ -171,15 +162,15 @@ else
                             border:1px solid #fecaca;border-radius:10px;
                             color:#dc2626;font-size:0.82rem;font-weight:700;
                             margin-bottom:0.75rem;">
-                    ⚠️ @_modalError
+                     @_modalError
                 </div>
             }
 
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" @onclick="CloseModal">
+                <button type="button" class="mo-btn mo-btn-secondary" @onclick="CloseModal">
                     Cancelar
                 </button>
-                <button type="button" class="btn-approve"
+                <button type="button" class="mo-btn mo-btn-success"
                         disabled="@(_selectedUser is null || _saving)"
                         @onclick="AddAdmin">
                     @if (_saving) { <span>Guardando...</span> }
@@ -194,17 +185,16 @@ else
 {
     <div class="modal-overlay" @onclick="CloseRemoveModal">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚠️</div>
             <div class="modal-title">Quitar Administrador</div>
             <div class="modal-sub">
                 ¿Quitar a <strong>@_adminToRemove.UserName</strong>
                 como administrador del sistema?
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" @onclick="CloseRemoveModal">
+                <button type="button" class="mo-btn mo-btn-secondary" @onclick="CloseRemoveModal">
                     Cancelar
                 </button>
-                <button type="button" class="btn-reject" @onclick="RemoveAdmin"
+                <button type="button" class="mo-btn mo-btn-danger" @onclick="RemoveAdmin"
                         disabled="@_saving">
                     @if (_saving) { <span>Quitando...</span> }
                     else { <span>✕ Quitar</span> }

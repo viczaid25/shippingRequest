@@ -135,91 +135,17 @@
 
 .field-row:last-child { margin-bottom: 0; }
 
-.field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.field-label {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #374151;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.field-label .required {
-    color: #ef4444;
+/* .mo-form-group/.mo-form-label/.mo-form-control/.mo-form-select/.mo-form-error
+   y .mo-toggle ahora los define meaxone-template.css */
+.required {
+    color: var(--mo-danger, #ef4444);
     margin-left: 2px;
 }
 
-.field-input,
-.field-select,
-.field-textarea {
-    width: 100%;
-    padding: 0.6rem 0.85rem;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    background: #f8fafc;
-    color: #0f172a;
-    font-size: 0.92rem;
-    font-family: inherit;
-    transition: all 0.18s ease;
-    box-sizing: border-box;
-}
+.mo-form-control.invalid,
+.mo-form-select.invalid { border-color: var(--mo-danger, #ef4444); }
 
-.field-input:focus,
-.field-select:focus,
-.field-textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-}
-
-.field-textarea { resize: vertical; min-height: 90px; }
-
-.field-input.invalid,
-.field-select.invalid { border-color: #ef4444; }
-
-.field-error {
-    font-size: 0.78rem;
-    color: #ef4444;
-    font-weight: 600;
-}
-
-/* Toggle / Checkbox */
-.toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
-    background: #f8fafc;
-    cursor: pointer;
-    transition: all 0.18s ease;
-    margin-bottom: 0.75rem;
-}
-
-.toggle-row:hover { background: #eff6ff; border-color: #bfdbfe; }
-.toggle-row.checked { background: #eff6ff; border-color: #3b82f6; }
-
-.toggle-label {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #0f172a;
-    flex: 1;
-}
-
-.toggle-desc {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin-top: 0.15rem;
-}
-
-/* Radio groups */
+/* Radio groups (sin equivalente 1:1 en MEAX One — recoloreado con su azul de marca) */
 .radio-group {
     display: flex;
     flex-wrap: wrap;
@@ -237,10 +163,15 @@
     cursor: pointer;
     transition: all 0.18s ease;
     user-select: none;
+    font-family: 'Montserrat', sans-serif;
 }
 
-.radio-chip:hover { background: #eff6ff; border-color: #93c5fd; }
-.radio-chip.selected { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.radio-chip:hover { background: #eff6ff; border-color: var(--mo-blue); }
+.radio-chip.selected {
+    background: linear-gradient(135deg, var(--mo-blue-deep), var(--mo-blue));
+    border-color: var(--mo-blue-deep);
+    color: #fff;
+}
 
 /* Package Builder */
 .pkg-tree { display: flex; flex-direction: column; gap: 0.85rem; }
@@ -285,21 +216,6 @@
 }
 
 .pkg-actions { display: flex; gap: 0.4rem; }
-
-.pkg-btn {
-    padding: 0.3rem 0.65rem;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    font-size: 0.78rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.18s ease;
-}
-
-.pkg-btn.add   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-.pkg-btn.del   { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-.pkg-btn.add:hover { background: #dbeafe; }
-.pkg-btn.del:hover { background: #fee2e2; }
 
 .pkg-node-body { padding: 0.75rem 1rem 1rem; border-top: 1px solid rgba(0,0,0,0.05); }
 
@@ -375,42 +291,8 @@
     font-weight: 600;
 }
 
-.btn-nav {
-    padding: 0.65rem 1.4rem;
-    border-radius: 12px;
-    border: none;
-    font-size: 0.9rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.18s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.btn-nav.prev {
-    background: #f1f5f9;
-    color: #334155;
-    border: 1.5px solid #e2e8f0;
-}
-
-.btn-nav.prev:hover { background: #e2e8f0; }
-
-.btn-nav.next {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(59,130,246,0.3);
-}
-
-.btn-nav.next:hover { box-shadow: 0 6px 18px rgba(59,130,246,0.4); transform: translateY(-1px); }
-
-.btn-nav.submit {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(22,163,74,0.3);
-}
-
-.btn-nav.submit:hover { box-shadow: 0 6px 18px rgba(22,163,74,0.4); transform: translateY(-1px); }
+/* Botones de navegación del wizard: ahora usan .mo-btn (mo-btn-secondary/
+   mo-btn-primary/mo-btn-success) de meaxone-template.css */
 
 /* Premium Badge */
 .premium-badge {

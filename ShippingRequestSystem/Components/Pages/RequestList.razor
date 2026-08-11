@@ -1,4 +1,4 @@
-﻿@page "/requests"
+@page "/requests"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @using ShippingRequestSystem.Helpers
@@ -15,10 +15,7 @@
                 <h2>Solicitudes de Envío</h2>
                 <p class="panel-subtitle">Todas las solicitudes registradas en el sistema</p>
             </div>
-            <a href="/requests/new" class="hero-btn primary"
-               style="min-height:42px;padding:0.55rem 1.1rem;font-size:0.88rem;width:auto;border-radius:12px;">
-                + Nueva
-            </a>
+            <a href="/requests/new" class="mo-btn mo-btn-primary mo-btn-sm">+ Nueva</a>
         </div>
 
         @if (_loading)
@@ -62,7 +59,7 @@
                             <StatusBadge Status="@r.Status" />
                             @if (r.ApproximateCost >= 5000)
                             {
-                                <span style="font-size:0.72rem;font-weight:900;color:#d97706;">⭐ PREMIUM</span>
+                                <span style="font-size:0.72rem;font-weight:900;color:#d97706;">PREMIUM</span>
                             }
                         </div>
                     </a>

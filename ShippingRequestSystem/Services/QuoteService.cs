@@ -24,6 +24,7 @@ public class QuoteService : IQuoteService
         await using var db = await _factory.CreateDbContextAsync();
 
         var request = await db.ShippingRequests
+            .Include(r => r.ApprovalSteps)
             .FirstOrDefaultAsync(r => r.Id == requestId)
             ?? throw new Exception("Solicitud no encontrada");
 
@@ -33,6 +34,14 @@ public class QuoteService : IQuoteService
         request.CooDocumentPath = hasCoo ? cooDocumentPath : null;
         request.UpdatedAt = DateTime.UtcNow;
         request.Status = RequestStatus.PendingUserQuoteSelection;
+
+        var tradeStaffStep = request.ApprovalSteps.FirstOrDefault(s => s.RoleName == "Trade Staff");
+        if (tradeStaffStep is not null && !tradeStaffStep.IsCompleted)
+        {
+            tradeStaffStep.IsCompleted = true;
+            tradeStaffStep.IsApproved = true;
+            tradeStaffStep.ActionDate = DateTime.UtcNow;
+        }
 
         foreach (var q in quotes)
         {
@@ -65,14 +74,6 @@ public class QuoteService : IQuoteService
         selected.IsSelected = true;
         request.ApproximateCost = selected.Amount;
         request.UpdatedAt = DateTime.UtcNow;
-
-        if (request.ApproximateCost >= 5000)
-        {
-            var presidentStep = request.ApprovalSteps
-                .FirstOrDefault(s => s.RoleName == "President");
-            if (presidentStep is not null)
-                presidentStep.IsRequired = true;
-        }
 
         bool requiresPremiumFreight =
             request.InvoiceType == InvoiceType.Comercial ||

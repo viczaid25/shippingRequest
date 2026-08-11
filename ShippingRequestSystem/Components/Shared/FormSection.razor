@@ -1,6 +1,5 @@
 ﻿<div class="form-section">
     <div class="form-section-header">
-        <div class="form-section-icon">@Icon</div>
         <div>
             <h3 class="form-section-title">@Title</h3>
             @if (!string.IsNullOrEmpty(Subtitle))
@@ -17,6 +16,5 @@
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
-    [Parameter] public string Icon { get; set; } = "📋";
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

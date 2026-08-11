@@ -52,7 +52,7 @@ public class ApprovalService : IApprovalService
             required: request.OperationType == OperationType.RT));
         steps.Add(MakeStep("Sales Manager", false));
         steps.Add(MakeStep("Finance Manager", true));
-        steps.Add(MakeStep("President", false));
+        steps.Add(MakeStep("President", true));
 
         return steps;
     }
@@ -116,20 +116,35 @@ public class ApprovalService : IApprovalService
         string approverEmail)
     {
         await using var db = await _factory.CreateDbContextAsync();
-        return await db.ApprovalSteps
-            .Include(s => s.ShippingRequest)
-            .Where(s => !s.IsCompleted &&
-                        s.IsRequired &&
-                        s.ApproverEmail == approverEmail &&
-                        (s.ShippingRequest.Status == RequestStatus.PendingTradeStaffApproval ||
-                         s.ShippingRequest.Status == RequestStatus.PendingTradeCoordinator ||
-                         s.ShippingRequest.Status == RequestStatus.PendingTradeManager ||
-                         s.ShippingRequest.Status == RequestStatus.PendingUserManager ||
-                         s.ShippingRequest.Status == RequestStatus.PendingProcurementManager ||
-                         s.ShippingRequest.Status == RequestStatus.PendingSalesManager ||
-                         s.ShippingRequest.Status == RequestStatus.PendingFinanceManager ||
-                         s.ShippingRequest.Status == RequestStatus.PendingPresident))
-            .OrderBy(s => s.ShippingRequest.CreatedAt)
+
+        var requests = await db.ShippingRequests
+            .Include(r => r.ApprovalSteps)
+            .Where(r => r.Status == RequestStatus.PendingTradeStaffQuotes ||
+                        r.Status == RequestStatus.PendingTradeStaffApproval ||
+                        r.Status == RequestStatus.PendingTradeCoordinator ||
+                        r.Status == RequestStatus.PendingTradeManager ||
+                        r.Status == RequestStatus.PendingUserManager ||
+                        r.Status == RequestStatus.PendingProcurementManager ||
+                        r.Status == RequestStatus.PendingSalesManager ||
+                        r.Status == RequestStatus.PendingFinanceManager ||
+                        r.Status == RequestStatus.PendingPresident)
             .ToListAsync();
+
+        // Por solicitud, el "paso pendiente" real es el de menor StepOrder que
+        // todavía no se completa — sin importar cuántos otros roles futuros
+        // tenga asignados el mismo aprobador para esa misma solicitud.
+        var pending = requests
+            .Select(r => r.ApprovalSteps
+                .Where(s => s.IsRequired && !s.IsCompleted)
+                .OrderBy(s => s.StepOrder)
+                .FirstOrDefault())
+            .Where(s => s is not null &&
+                        string.Equals(s.ApproverEmail, approverEmail,
+                                      StringComparison.OrdinalIgnoreCase))
+            .Select(s => s!)
+            .OrderBy(s => s.ShippingRequest.CreatedAt)
+            .ToList();
+
+        return pending;
     }
 }

@@ -2,11 +2,10 @@
 {
     <div class="modal-overlay" @onclick="Close">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
             <div class="modal-title">@Title</div>
             <div class="modal-sub">@Message</div>
             <div class="modal-actions">
-                <button class="btn-approve" @onclick="Close">Entendido</button>
+                <button class="mo-btn mo-btn-success" @onclick="Close">Entendido</button>
             </div>
         </div>
     </div>

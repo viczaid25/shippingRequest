@@ -16,7 +16,7 @@
     gap: 1.5rem;
     padding: 1.4rem 1.75rem;
     border-radius: 28px;
-    background: linear-gradient(135deg, rgba(6,11,41,0.97) 0%, rgba(58,6,71,0.97) 100%);
+    background: var(--color-primary-gradient);
     color: #fff;
     box-shadow: 0 24px 45px rgba(15,23,42,0.16);
     flex-wrap: wrap;
@@ -338,39 +338,7 @@
     flex-wrap: wrap;
 }
 
-.btn-approve {
-    padding: 0.65rem 1.4rem;
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.18s ease;
-    box-shadow: 0 4px 12px rgba(22,163,74,0.25);
-}
-
-    .btn-approve:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(22,163,74,0.35);
-    }
-
-.btn-reject {
-    padding: 0.65rem 1.4rem;
-    border-radius: 12px;
-    border: 1.5px solid #fca5a5;
-    background: #fef2f2;
-    color: #dc2626;
-    font-weight: 800;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.18s ease;
-}
-
-    .btn-reject:hover {
-        background: #fee2e2;
-    }
+/* Botones de aprobar/rechazar: ahora usan .mo-btn-success/.mo-btn-danger */
 
 /* Package Detail */
 .pkg-detail-tree {
@@ -522,21 +490,6 @@
     justify-content: flex-end;
     margin-top: 1.25rem;
 }
-
-.btn-cancel {
-    padding: 0.6rem 1.2rem;
-    border-radius: 10px;
-    border: 1.5px solid #e2e8f0;
-    background: #f8fafc;
-    color: #334155;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.18s;
-}
-
-    .btn-cancel:hover {
-        background: #e2e8f0;
-    }
 
 @media (max-width: 768px) {
     .detail-grid,

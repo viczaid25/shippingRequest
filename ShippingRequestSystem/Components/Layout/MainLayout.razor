@@ -1,31 +1,107 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject CurrentUserService CurrentUser
 
-<div class="page">
-    <SidebarInteractive />
-    <main>
-        <div class="top-row px-4"
-             style="justify-content:space-between;">
-            <span style="color:#64748b;font-size:0.85rem;font-weight:600;">
-                Shipping Request System
-            </span>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <span style="font-size:0.84rem;color:#374151;font-weight:600;">
-                    @CurrentUser.DisplayName
-                </span>
-                <a href="/auth/logout"
-                   style="padding:0.4rem 0.9rem;border-radius:8px;
-                          background:#f1f5f9;color:#374151;font-size:0.82rem;
-                          font-weight:700;text-decoration:none;border:1px solid #e2e8f0;
-                          transition:all 0.18s ease;"
-                   onmouseover="this.style.background='#e2e8f0'"
-                   onmouseout="this.style.background='#f1f5f9'">
-                    Cerrar Sesión
-                </a>
-            </div>
+<nav id="mo-navbar">
+    <div id="mo-stripe"></div>
+    <button id="mo-hamburger" onclick="moToggleSidebar()" aria-label="Menú">
+        <span></span><span></span><span></span>
+    </button>
+    <a id="mo-logo" href="/">
+        <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#1e3a8a,#2563eb);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
         </div>
-        <article class="content">
+        <div>
+            <div id="mo-logo-text">ShipRequest</div>
+            <div id="mo-logo-sub">Shipping Request System</div>
+        </div>
+    </a>
+
+    <div class="mo-spacer"></div>
+
+    <div id="mo-user-wrap">
+        <button id="mo-user-btn" onclick="moToggleUserMenu(event)">
+            <div id="mo-user-avatar">@Initials</div>
+            <span id="mo-user-name">@CurrentUser.DisplayName</span>
+            <svg id="mo-user-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6" />
+            </svg>
+        </button>
+
+        <div id="mo-user-dropdown">
+            <div id="mo-user-dropdown-header">
+                <div class="mo-dd-avatar">@Initials</div>
+                <div>
+                    <div class="mo-dd-name">@CurrentUser.DisplayName</div>
+                    <div class="mo-dd-login">@CurrentUser.Email</div>
+                </div>
+            </div>
+            <div class="mo-dd-divider"></div>
+            <a class="mo-dd-item mo-dd-logout" href="/auth/logout">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                </svg>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div id="mo-content-area">
+    <aside id="mo-sidebar">
+        <NavMenu />
+        <div id="mo-sb-version">
+            <span class="mo-sb-version-text">v1.0.0</span>
+        </div>
+    </aside>
+    <main id="mo-main">
+        <div class="mo-page-wrap">
             @Body
-        </article>
+        </div>
     </main>
 </div>
+
+<script>
+    // Toggle del sidebar — igual que la plantilla MEAX One (JS plano, sin
+    // depender del render mode de Blazor, ya que este layout recibe el
+    // contenido de la página como parámetro y no puede ser interactivo).
+    function moToggleSidebar() {
+        var sb = document.getElementById('mo-sidebar');
+        var main = document.getElementById('mo-main');
+        if (!sb) return;
+        if (window.innerWidth <= 768) {
+            sb.classList.toggle('mobile-open');
+        } else {
+            sb.classList.toggle('collapsed');
+            if (main) main.classList.toggle('sb-collapsed');
+        }
+    }
+
+    function moToggleUserMenu(e) {
+        e.stopPropagation();
+        var dd = document.getElementById('mo-user-dropdown');
+        var ch = document.getElementById('mo-user-chevron');
+        if (dd) dd.classList.toggle('open');
+        if (ch) ch.classList.toggle('rotated');
+    }
+
+    document.addEventListener('click', function (e) {
+        var wrap = document.getElementById('mo-user-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            var dd = document.getElementById('mo-user-dropdown');
+            var ch = document.getElementById('mo-user-chevron');
+            if (dd) dd.classList.remove('open');
+            if (ch) ch.classList.remove('rotated');
+        }
+    });
+</script>
+
+@code {
+    private string Initials =>
+        CurrentUser.DisplayName.Length >= 2 ? CurrentUser.DisplayName[..2].ToUpper() : "?";
+}

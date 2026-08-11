@@ -1,4 +1,4 @@
-﻿@page "/admin/permissions"
+@page "/admin/permissions"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @inject IPermissionService PermissionService
@@ -15,25 +15,22 @@
 }
 else if (!_isAdmin)
 {
-    <div class="empty-state compact">⛔ Acceso restringido.</div>
+    <div class="empty-state compact">Acceso restringido.</div>
 }
 else
 {
     <div class="index-page">
 
-        <div class="index-hero" style="padding:1.25rem 1.5rem;">
-            <div class="index-hero-left">
-                <div class="index-kicker">🔑 Permisos</div>
-                <h1 style="font-size:1.6rem;">Roles de Aprobación</h1>
-                <p class="hero-text">
-                    Asigna usuarios a cada etapa del flujo de aprobación.
-                </p>
-            </div>
-            <div style="display:flex;gap:0.75rem;align-self:center;">
-                <a href="/admin" class="btn-nav prev"
-                   style="text-decoration:none;display:inline-flex;align-items:center;">
-                    ← Volver
-                </a>
+        <div style="margin-bottom:0.75rem;">
+            <a href="/admin" class="mo-btn mo-btn-secondary-outline mo-btn-sm">← Volver</a>
+        </div>
+        <div id="mo-banner">
+            <div class="mo-banner-orb mo-banner-orb-1"></div>
+            <div class="mo-banner-orb mo-banner-orb-2"></div>
+            <div id="mo-banner-content">
+                <div id="mo-banner-tag">Permisos</div>
+                <div id="mo-banner-title">Roles de Aprobación</div>
+                <div id="mo-banner-sub">Asigna usuarios a cada etapa del flujo de aprobación.</div>
             </div>
         </div>
 
@@ -50,11 +47,7 @@ else
                             @perms.Count usuario(s) asignado(s)
                         </p>
                     </div>
-                    <button type="button"
-                            style="padding:0.5rem 1rem;border-radius:10px;
-                                   background:#eff6ff;color:#1d4ed8;font-weight:700;
-                                   font-size:0.84rem;border:1.5px solid #bfdbfe;
-                                   cursor:pointer;"
+                    <button type="button" class="mo-btn mo-btn-primary-outline mo-btn-sm"
                             @onclick="() => OpenAddModal(role)">
                         + Agregar Usuario
                     </button>
@@ -98,11 +91,7 @@ else
                                         }
                                     </div>
                                 </div>
-                                <button type="button"
-                                        style="padding:0.35rem 0.75rem;border-radius:8px;
-                                               background:#fef2f2;color:#dc2626;font-weight:700;
-                                               font-size:0.78rem;border:1px solid #fecaca;
-                                               cursor:pointer;"
+                                <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                         @onclick="() => ConfirmRemove(p)">
                                     Quitar
                                 </button>
@@ -120,16 +109,15 @@ else
 {
     <div class="modal-overlay" @onclick="CloseModal">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔑</div>
             <div class="modal-title">Agregar a: @_selectedRole</div>
             <div class="modal-sub">
                 Busca al usuario por nombre, email o login de red
             </div>
 
             <!-- Buscador -->
-            <div class="field-group" style="margin-bottom:0.75rem;">
-                <label class="field-label">Buscar usuario</label>
-                <input type="text" class="field-input"
+            <div class="mo-form-group" style="margin-bottom:0.75rem;">
+                <label class="mo-form-label">Buscar usuario</label>
+                <input type="text" class="mo-form-control"
                        placeholder="Nombre, email o login..."
                        value="@_searchQuery"
                        @oninput="OnSearchInput" />
@@ -200,15 +188,15 @@ else
                 <div style="padding:0.6rem 0.85rem;background:#fef2f2;border:1px solid #fecaca;
                             border-radius:10px;color:#dc2626;font-size:0.82rem;
                             font-weight:700;margin-bottom:0.75rem;">
-                    ⚠️ @_modalError
+                     @_modalError
                 </div>
             }
 
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" @onclick="CloseModal">
+                <button type="button" class="mo-btn mo-btn-secondary" @onclick="CloseModal">
                     Cancelar
                 </button>
-                <button type="button" class="btn-approve"
+                <button type="button" class="mo-btn mo-btn-success"
                         disabled="@(_selectedUser is null || _saving)"
                         @onclick="AddPermission">
                     @if (_saving) { <span>Guardando...</span> }
@@ -224,7 +212,6 @@ else
 {
     <div class="modal-overlay" @onclick="CloseRemoveModal">
         <div class="modal-box" @onclick:stopPropagation="true">
-            <div style="font-size:1.5rem;margin-bottom:0.5rem;">⚠️</div>
             <div class="modal-title">Quitar Permiso</div>
             <div class="modal-sub">
                 ¿Quitar a <strong>@_permToRemove.UserName</strong>
@@ -232,10 +219,10 @@ else
                 Esta acción desactivará su acceso de aprobación.
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" @onclick="CloseRemoveModal">
+                <button type="button" class="mo-btn mo-btn-secondary" @onclick="CloseRemoveModal">
                     Cancelar
                 </button>
-                <button type="button" class="btn-reject" @onclick="RemovePermission"
+                <button type="button" class="mo-btn mo-btn-danger" @onclick="RemovePermission"
                         disabled="@_saving">
                     @if (_saving) { <span>Quitando...</span> }
                     else { <span>✕ Quitar Permiso</span> }

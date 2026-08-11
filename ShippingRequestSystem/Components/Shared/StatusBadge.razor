@@ -1,9 +1,8 @@
 ﻿@using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Helpers
 
-<span class="status-pill"
-      style="background:@Status.ToStatusBg(); color:@Status.ToStatusColor(); font-size:0.76rem; font-weight:900;">
-    @Status.ToDisplayName()
+<span class="mo-badge mo-badge-@Status.ToBadgeVariant()">
+    <span class="mo-badge-dot"></span>@Status.ToDisplayName()
 </span>
 
 @code {

@@ -23,26 +23,14 @@ public static class EnumExtensions
         _ => status.ToString()
     };
 
-    public static string ToStatusColor(this RequestStatus status) => status switch
+    /// <summary>Variante mo-badge-* (meaxone-template.css) para representar el estado.</summary>
+    public static string ToBadgeVariant(this RequestStatus status) => status switch
     {
-        RequestStatus.Approved => "#16a34a",
-        RequestStatus.Rejected => "#dc2626",
-        RequestStatus.Draft => "#64748b",
-        RequestStatus.PendingUserQuoteSelection => "#7c3aed",
-        RequestStatus.PendingPremiumFreight => "#d97706",
-        RequestStatus.PendingTradeStaffApproval => "#0369a1",
-        _ => "#d97706"
-    };
-
-    public static string ToStatusBg(this RequestStatus status) => status switch
-    {
-        RequestStatus.Approved => "#dcfce7",
-        RequestStatus.Rejected => "#fee2e2",
-        RequestStatus.Draft => "#f1f5f9",
-        RequestStatus.PendingUserQuoteSelection => "#ede9fe",
-        RequestStatus.PendingPremiumFreight => "#fef3c7",
-        RequestStatus.PendingTradeStaffApproval => "#e0f2fe",
-        _ => "#fef3c7"
+        RequestStatus.Approved => "success",
+        RequestStatus.Rejected => "danger",
+        RequestStatus.Draft => "secondary",
+        RequestStatus.PendingPremiumFreight => "warning",
+        _ => "primary"
     };
 
     public static string ToDisplayName(this ShippingWay way) => way switch

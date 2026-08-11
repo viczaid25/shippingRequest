@@ -1,4 +1,4 @@
-﻿<Router AppAssembly="typeof(App).Assembly">
+<Router AppAssembly="typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
@@ -7,10 +7,9 @@
         <PageTitle>No encontrado</PageTitle>
         <LayoutView Layout="typeof(MainLayout)">
             <div class="panel-card" style="text-align:center;padding:3rem;">
-                <div style="font-size:3rem;margin-bottom:1rem;">🔍</div>
                 <h2 style="color:#0f172a;">Página no encontrada</h2>
                 <p style="color:#64748b;">La ruta que buscas no existe.</p>
-                <a href="/" class="btn-nav next" style="display:inline-flex;margin-top:1rem;">
+                <a href="/" class="mo-btn mo-btn-primary" style="display:inline-flex;margin-top:1rem;">
                     ← Volver al Dashboard
                 </a>
             </div>

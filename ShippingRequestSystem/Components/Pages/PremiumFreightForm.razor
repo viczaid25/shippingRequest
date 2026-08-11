@@ -1,4 +1,4 @@
-﻿@page "/requests/{Id:int}/premium-freight"
+@page "/requests/{Id:int}/premium-freight"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @using ShippingRequestSystem.Helpers
@@ -25,28 +25,27 @@ else
 
         <div class="detail-hero" style="background:linear-gradient(135deg,#78350f,#92400e);">
             <div class="detail-hero-left">
-                <div class="detail-hero-id">⭐ PREMIUM FREIGHT · #@_request.Id</div>
+                <div class="detail-hero-id">PREMIUM FREIGHT · #@_request.Id</div>
                 <h1>@_request.RecipientBusinessName</h1>
                 <div style="color:rgba(255,255,255,0.7);font-size:0.92rem;">
                     Costo seleccionado: $@_request.ApproximateCost.ToString("N2") USD
                 </div>
             </div>
             <div class="detail-hero-right">
-                <div class="premium-badge">⭐ ≥ $5,000 USD</div>
+                <div class="premium-badge"> ≥ $5,000 USD</div>
             </div>
         </div>
 
         <div class="info-card" style="border-color:#f59e0b;">
             <div class="info-card-header" style="background:#fef3c7;">
-                <div class="info-card-icon" style="background:#fde68a;">⭐</div>
                 <h3 class="info-card-title">Información de Premium Freight</h3>
             </div>
             <div class="info-card-body">
 
                 <!-- Dirección / Alcance / Transporte / Pago -->
                 <div class="field-row">
-                    <div class="field-group">
-                        <label class="field-label">Dirección</label>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">Dirección</label>
                         <div class="radio-group">
                             @foreach (var d in Enum.GetValues<PremiumFreightDirection>())
                             {
@@ -55,8 +54,8 @@ else
                             }
                         </div>
                     </div>
-                    <div class="field-group">
-                        <label class="field-label">Alcance</label>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">Alcance</label>
                         <div class="radio-group">
                             @foreach (var s in Enum.GetValues<PremiumFreightScope>())
                             {
@@ -68,8 +67,8 @@ else
                 </div>
 
                 <div class="field-row">
-                    <div class="field-group">
-                        <label class="field-label">Tipo de Transporte</label>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">Tipo de Transporte</label>
                         <div class="radio-group">
                             @foreach (var t in Enum.GetValues<PremiumFreightTransport>())
                             {
@@ -80,8 +79,8 @@ else
                             }
                         </div>
                     </div>
-                    <div class="field-group">
-                        <label class="field-label">Responsabilidad de Pago</label>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">Responsabilidad de Pago</label>
                         <div class="radio-group">
                             @foreach (var p in Enum.GetValues<PremiumFreightPayment>())
                             {
@@ -98,78 +97,78 @@ else
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:0.5rem;">
                     <div>
                         <div style="font-weight:800;font-size:0.88rem;color:#92400e;margin-bottom:0.65rem;">
-                            📤 Pick Up At
+                             Pick Up At
                         </div>
-                        <div class="field-group" style="margin-bottom:0.65rem;">
-                            <label class="field-label">Nombre</label>
-                            <input type="text" class="field-input" @bind="_pf.PickUpName" />
+                        <div class="mo-form-group" style="margin-bottom:0.65rem;">
+                            <label class="mo-form-label">Nombre</label>
+                            <input type="text" class="mo-form-control" @bind="_pf.PickUpName" />
                         </div>
-                        <div class="field-group" style="margin-bottom:0.65rem;">
-                            <label class="field-label">
+                        <div class="mo-form-group" style="margin-bottom:0.65rem;">
+                            <label class="mo-form-label">
                                 Dirección <span style="color:#ef4444;">*</span>
                             </label>
-                            <textarea class="field-textarea @(_errors.Contains("PickUpAddress") ? "invalid" : "")"
+                            <textarea class="mo-form-control @(_errors.Contains("PickUpAddress") ? "invalid" : "")"
                                       style="min-height:70px;"
                                       @bind="_pf.PickUpAddress"></textarea>
                             @if (_errors.Contains("PickUpAddress"))
                             {
-                                <span class="field-error">La dirección de recolección es requerida</span>
+                                <span class="mo-form-error">La dirección de recolección es requerida</span>
                             }
                         </div>
-                        <div class="field-group">
-                            <label class="field-label">Persona de Contacto</label>
-                            <input type="text" class="field-input" @bind="_pf.PickUpContact" />
+                        <div class="mo-form-group">
+                            <label class="mo-form-label">Persona de Contacto</label>
+                            <input type="text" class="mo-form-control" @bind="_pf.PickUpContact" />
                         </div>
                     </div>
                     <div>
                         <div style="font-weight:800;font-size:0.88rem;color:#92400e;margin-bottom:0.65rem;">
-                            📥 Delivery At
+                             Delivery At
                         </div>
-                        <div class="field-group" style="margin-bottom:0.65rem;">
-                            <label class="field-label">Nombre</label>
-                            <input type="text" class="field-input" @bind="_pf.DeliveryName" />
+                        <div class="mo-form-group" style="margin-bottom:0.65rem;">
+                            <label class="mo-form-label">Nombre</label>
+                            <input type="text" class="mo-form-control" @bind="_pf.DeliveryName" />
                         </div>
-                        <div class="field-group" style="margin-bottom:0.65rem;">
-                            <label class="field-label">
+                        <div class="mo-form-group" style="margin-bottom:0.65rem;">
+                            <label class="mo-form-label">
                                 Dirección <span style="color:#ef4444;">*</span>
                             </label>
-                            <textarea class="field-textarea @(_errors.Contains("DeliveryAddress") ? "invalid" : "")"
+                            <textarea class="mo-form-control @(_errors.Contains("DeliveryAddress") ? "invalid" : "")"
                                       style="min-height:70px;"
                                       @bind="_pf.DeliveryAddress"></textarea>
                             @if (_errors.Contains("DeliveryAddress"))
                             {
-                                <span class="field-error">La dirección de entrega es requerida</span>
+                                <span class="mo-form-error">La dirección de entrega es requerida</span>
                             }
                         </div>
-                        <div class="field-group">
-                            <label class="field-label">Persona de Contacto</label>
-                            <input type="text" class="field-input" @bind="_pf.DeliveryContact" />
+                        <div class="mo-form-group">
+                            <label class="mo-form-label">Persona de Contacto</label>
+                            <input type="text" class="mo-form-control" @bind="_pf.DeliveryContact" />
                         </div>
                     </div>
                 </div>
 
                 <div class="field-row" style="margin-top:0.75rem;">
-                    <div class="field-group">
-                        <label class="field-label">
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">
                             Causa Raíz del Envío <span style="color:#ef4444;">*</span>
                         </label>
-                        <textarea class="field-textarea @(_errors.Contains("CauseOfShipment") ? "invalid" : "")"
+                        <textarea class="mo-form-control @(_errors.Contains("CauseOfShipment") ? "invalid" : "")"
                                   @bind="_pf.CauseOfShipment"
                                   placeholder="Describe la causa raíz y el producto..."></textarea>
                         @if (_errors.Contains("CauseOfShipment"))
                         {
-                            <span class="field-error">La causa raíz del envío es requerida</span>
+                            <span class="mo-form-error">La causa raíz del envío es requerida</span>
                         }
                     </div>
-                    <div class="field-group">
-                        <label class="field-label">
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">
                             Countermeasures
                             @if (_requiresCountermeasures)
                             {
                                 <span style="color:#ef4444;">*</span>
                             }
                         </label>
-                        <textarea class="field-textarea @(_errors.Contains("Countermeasures") ? "invalid" : "")"
+                        <textarea class="mo-form-control @(_errors.Contains("Countermeasures") ? "invalid" : "")"
                                   @bind="_pf.Countermeasures"
                                   placeholder="Medidas correctivas..."></textarea>
                         @if (_requiresCountermeasures)
@@ -180,15 +179,15 @@ else
                         }
                         @if (_errors.Contains("Countermeasures"))
                         {
-                            <span class="field-error">Las contramedidas son requeridas para esta solicitud</span>
+                            <span class="mo-form-error">Las contramedidas son requeridas para esta solicitud</span>
                         }
                     </div>
                 </div>
 
                 <div class="field-row">
-                    <div class="field-group">
-                        <label class="field-label">Forwarder</label>
-                        <input type="text" class="field-input" @bind="_pf.Forwarder"
+                    <div class="mo-form-group">
+                        <label class="mo-form-label">Forwarder</label>
+                        <input type="text" class="mo-form-control" @bind="_pf.Forwarder"
                                placeholder="Nombre del agente de carga" />
                     </div>
                     <div></div>
@@ -201,13 +200,13 @@ else
         {
             <div style="padding:0.85rem 1rem;background:#fef2f2;border:1px solid #fecaca;
                                 border-radius:14px;color:#dc2626;font-weight:700;">
-                ⚠️ @_errorMsg
+                 @_errorMsg
             </div>
         }
 
         <div class="form-nav">
-            <a href="/requests/@Id/select-quote" class="btn-nav prev">← Cambiar Cotización</a>
-            <button type="button" class="btn-nav submit" @onclick="Submit"
+            <a href="/requests/@Id/select-quote" class="mo-btn mo-btn-secondary">← Cambiar Cotización</a>
+            <button type="button" class="mo-btn mo-btn-success" @onclick="Submit"
                     disabled="@_submitting">
                 @if (_submitting)
                 {

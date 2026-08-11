@@ -1,4 +1,4 @@
-﻿@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Models
 
 <div style="border:1.5px solid @(Quote.IsSelected ? "#3b82f6" : "#e2e8f0");
             border-radius:16px;padding:1.1rem;background:#fff;
@@ -22,7 +22,7 @@
             {
                 <span style="background:#fef3c7;color:#d97706;border-radius:999px;
                                  padding:0.2rem 0.65rem;font-size:0.72rem;font-weight:900;">
-                    ⭐ Premium
+                    Premium
                 </span>
             }
         </div>
@@ -53,7 +53,7 @@
                       border:1px solid #fecaca;transition:all 0.18s ease;"
            onmouseover="this.style.background='#fee2e2'"
            onmouseout="this.style.background='#fef2f2'">
-            📄 Ver PDF — @Quote.FileName
+             Ver PDF — @Quote.FileName
         </a>
     }
     else

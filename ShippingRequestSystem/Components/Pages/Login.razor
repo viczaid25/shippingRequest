@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @layout EmptyLayout
 @using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Nav
@@ -6,12 +6,11 @@
 <PageTitle>Iniciar Sesión — Shipping Request System</PageTitle>
 
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
-            background:linear-gradient(135deg,rgba(6,11,41,0.97) 0%,rgba(58,6,71,0.97) 100%);">
+            background:var(--color-primary-gradient);">
     <div style="width:100%;max-width:420px;padding:1rem;">
 
         <!-- Logo -->
         <div style="text-align:center;margin-bottom:2rem;">
-            <div style="font-size:2.5rem;margin-bottom:0.5rem;">🚚</div>
             <div style="color:#fff;font-size:1.4rem;font-weight:900;">ShipRequest</div>
             <div style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin-top:0.25rem;">
                 Shipping Request System
@@ -31,10 +30,8 @@
 
             @if (!string.IsNullOrEmpty(_errorMsg))
             {
-                <div style="padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fecaca;
-                                border-radius:12px;color:#dc2626;font-size:0.88rem;
-                                font-weight:700;margin-bottom:1.25rem;">
-                    ⚠️ @_errorMsg
+                <div class="mo-alert mo-alert-danger" style="margin-bottom:1.25rem;">
+                    <span>@_errorMsg</span>
                 </div>
             }
 
@@ -42,28 +39,23 @@
             <form method="post" action="/auth/login">
                 <input type="hidden" name="returnUrl" value="@_returnUrl" />
 
-                <div class="field-group" style="margin-bottom:1rem;">
-                    <label class="field-label">Usuario</label>
-                    <input type="text" name="username" class="field-input"
+                <div class="mo-form-group" style="margin-bottom:1rem;">
+                    <label class="mo-form-label">Usuario</label>
+                    <input type="text" name="username" class="mo-form-control"
                            placeholder="usuario.nombre"
                            autocomplete="username"
                            style="width:100%;box-sizing:border-box;" />
                 </div>
 
-                <div class="field-group" style="margin-bottom:1.5rem;">
-                    <label class="field-label">Contraseña</label>
-                    <input type="password" name="password" class="field-input"
+                <div class="mo-form-group" style="margin-bottom:1.5rem;">
+                    <label class="mo-form-label">Contraseña</label>
+                    <input type="password" name="password" class="mo-form-control"
                            placeholder="••••••••"
                            autocomplete="current-password"
                            style="width:100%;box-sizing:border-box;" />
                 </div>
 
-                <button type="submit"
-                        style="width:100%;min-height:48px;border:none;border-radius:13px;
-                               background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-                               color:#fff;font-size:0.95rem;font-weight:800;
-                               cursor:pointer;box-shadow:0 6px 18px rgba(59,130,246,0.3);
-                               transition:all 0.18s ease;">
+                <button type="submit" class="mo-btn mo-btn-primary mo-btn-block mo-btn-lg">
                     Iniciar Sesión
                 </button>
             </form>

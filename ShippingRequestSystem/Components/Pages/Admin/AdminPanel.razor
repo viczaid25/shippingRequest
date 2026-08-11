@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.Services
 @inject IPermissionService PermissionService
@@ -17,10 +17,9 @@
 else if (!_isAdmin)
 {
     <div class="panel-card" style="text-align:center;padding:3rem;">
-        <div style="font-size:2.5rem;margin-bottom:1rem;">⛔</div>
         <h2 style="color:#dc2626;">Acceso Restringido</h2>
         <p style="color:#64748b;">Solo los administradores del sistema pueden acceder.</p>
-        <a href="/" class="btn-nav next" style="display:inline-flex;margin-top:1rem;">
+        <a href="/" class="mo-btn mo-btn-primary" style="display:inline-flex;margin-top:1rem;">
             ← Volver al Dashboard
         </a>
     </div>
@@ -29,14 +28,16 @@ else
 {
     <div class="index-page">
 
-        <!-- Hero -->
-        <div class="index-hero">
-            <div class="index-hero-left">
-                <div class="index-kicker">⚙️ Administración</div>
-                <h1>Panel de Control</h1>
-                <p class="hero-text">
+        <!-- Banner -->
+        <div id="mo-banner">
+            <div class="mo-banner-orb mo-banner-orb-1"></div>
+            <div class="mo-banner-orb mo-banner-orb-2"></div>
+            <div id="mo-banner-content">
+                <div id="mo-banner-tag">Administración</div>
+                <div id="mo-banner-title">Panel de Control</div>
+                <div id="mo-banner-sub">
                     Gestiona los permisos de aprobación y los administradores del sistema.
-                </p>
+                </div>
             </div>
         </div>
 
@@ -46,21 +47,21 @@ else
             <a href="/admin/permissions" class="stat-card"
                style="text-decoration:none;cursor:pointer;">
                 <span>Configuración</span>
-                <strong style="font-size:2.5rem;">🔑</strong>
+                <strong style="font-size:2.5rem;"></strong>
                 <p>Gestionar permisos de aprobación por rol</p>
             </a>
 
             <a href="/admin/admins" class="stat-card"
                style="text-decoration:none;cursor:pointer;">
                 <span>Administradores</span>
-                <strong style="font-size:2.5rem;">👑</strong>
+                <strong style="font-size:2.5rem;"></strong>
                 <p>Agregar o quitar administradores del sistema</p>
             </a>
 
             <a href="/admin/parts" class="stat-card"
                style="text-decoration:none;cursor:pointer;">
                 <span>Catálogo</span>
-                <strong style="font-size:2.5rem;">📋</strong>
+                <strong style="font-size:2.5rem;"></strong>
                 <p>Números de parte disponibles para autocompletar</p>
             </a>
 
@@ -103,7 +104,7 @@ else
                             {
                                 <span style="font-size:0.78rem;color:#ef4444;
                                                          font-weight:700;font-style:italic;">
-                                    ⚠️ Sin usuarios configurados
+                                     Sin usuarios configurados
                                 </span>
                             }
                             else

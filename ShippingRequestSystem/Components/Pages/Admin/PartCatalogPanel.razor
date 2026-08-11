@@ -16,26 +16,25 @@
 }
 else if (!_isAdmin)
 {
-    <div class="empty-state compact">⛔ Acceso restringido.</div>
+    <div class="empty-state compact">Acceso restringido.</div>
 }
 else
 {
     <div class="index-page">
 
-        <div class="index-hero" style="padding:1.25rem 1.5rem;">
-            <div class="index-hero-left">
-                <div class="index-kicker">📋 Catálogo</div>
-                <h1 style="font-size:1.6rem;">Números de Parte</h1>
-                <p class="hero-text">
+        <div style="margin-bottom:0.75rem;">
+            <a href="/admin" class="mo-btn mo-btn-secondary-outline mo-btn-sm">← Volver</a>
+        </div>
+        <div id="mo-banner">
+            <div class="mo-banner-orb mo-banner-orb-1"></div>
+            <div class="mo-banner-orb mo-banner-orb-2"></div>
+            <div id="mo-banner-content">
+                <div id="mo-banner-tag">Catálogo</div>
+                <div id="mo-banner-title">Números de Parte</div>
+                <div id="mo-banner-sub">
                     Administra los números de parte disponibles para autocompletar en las
                     solicitudes de envío.
-                </p>
-            </div>
-            <div style="display:flex;gap:0.75rem;align-self:center;">
-                <a href="/admin" class="btn-nav prev"
-                   style="text-decoration:none;display:inline-flex;align-items:center;">
-                    ← Volver
-                </a>
+                </div>
             </div>
         </div>
 
@@ -48,22 +47,22 @@ else
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 2fr 1fr auto;gap:0.75rem;align-items:end;">
-                <div class="field-group">
-                    <label class="field-label">No. Parte <span class="required">*</span></label>
-                    <input type="text" class="field-input" placeholder="P/N"
+                <div class="mo-form-group">
+                    <label class="mo-form-label">No. Parte <span class="required">*</span></label>
+                    <input type="text" class="mo-form-control" placeholder="P/N"
                            @bind="_newPartNumber" @bind:event="oninput" />
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Descripción</label>
-                    <input type="text" class="field-input" placeholder="Descripción"
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Descripción</label>
+                    <input type="text" class="mo-form-control" placeholder="Descripción"
                            @bind="_newDescription" @bind:event="oninput" />
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Clase</label>
-                    <input type="text" class="field-input" placeholder="Clase"
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Clase</label>
+                    <input type="text" class="mo-form-control" placeholder="Clase"
                            @bind="_newClass" @bind:event="oninput" />
                 </div>
-                <button type="button" class="btn-nav next" style="height:42px;"
+                <button type="button" class="mo-btn mo-btn-primary" style="height:42px;"
                         disabled="@(_saving || string.IsNullOrWhiteSpace(_newPartNumber))"
                         @onclick="AddPart">
                     + Agregar
@@ -75,7 +74,7 @@ else
                 <div style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:#fef2f2;
                             border:1px solid #fecaca;border-radius:10px;color:#dc2626;
                             font-size:0.82rem;font-weight:700;">
-                    ⚠️ @_formError
+                     @_formError
                 </div>
             }
         </div>
@@ -119,11 +118,7 @@ else
                                 </div>
                             </div>
                             <button type="button"
-                                    style="padding:0.35rem 0.75rem;border-radius:8px;
-                                           font-weight:700;font-size:0.78rem;cursor:pointer;
-                                           background:@(p.IsActive ? "#fef2f2" : "#f0fdf4");
-                                           color:@(p.IsActive ? "#dc2626" : "#15803d");
-                                           border:1px solid @(p.IsActive ? "#fecaca" : "#86efac");"
+                                    class="@("mo-btn mo-btn-sm " + (p.IsActive ? "mo-btn-danger-outline" : "mo-btn-success-outline"))"
                                     @onclick="() => ToggleActive(p)">
                                 @(p.IsActive ? "Desactivar" : "Activar")
                             </button>

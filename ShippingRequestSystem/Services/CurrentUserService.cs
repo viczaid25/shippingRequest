@@ -55,20 +55,10 @@ public class CurrentUserService
     public string DisplayName => GetDisplayNameAsync().GetAwaiter().GetResult();
     public string Department => GetDepartmentAsync().GetAwaiter().GetResult();
 
-    public bool IsTradeStaff
-        => IsInRoleAsync("Trade_Staff").GetAwaiter().GetResult();
-    public bool IsTradeCoordinator
-        => IsInRoleAsync("Trade_Coordinator").GetAwaiter().GetResult();
-    public bool IsTradeManager
-        => IsInRoleAsync("Trade_Manager").GetAwaiter().GetResult();
-    public bool IsProcurement
-        => IsInRoleAsync("Procurement_Manager").GetAwaiter().GetResult();
-    public bool IsSalesManager
-        => IsInRoleAsync("Sales_Manager").GetAwaiter().GetResult();
-    public bool IsFinanceManager
-        => IsInRoleAsync("Finance_Manager").GetAwaiter().GetResult();
-    public bool IsPresident
-        => IsInRoleAsync("President").GetAwaiter().GetResult();
+    // Los roles de aprobación (Trade Staff, Trade Coordinator, Finance Manager, etc.)
+    // NO se determinan por grupo de AD — se asignan por persona en /admin/permissions
+    // (tabla ApprovalRolePermission) y se verifican comparando el email del usuario
+    // contra el ApproverEmail del ApprovalStep correspondiente en cada solicitud.
 
     // IsAdmin NO está aquí — se verifica contra la BD via IPermissionService
 }

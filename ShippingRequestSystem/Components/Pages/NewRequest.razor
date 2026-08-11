@@ -1,4 +1,4 @@
-﻿@page "/requests/new"
+@page "/requests/new"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.ViewModels
 @using ShippingRequestSystem.Services
@@ -43,91 +43,91 @@
 <!-- PASO 0 — Datos del Solicitante -->
 @if (_step == 0)
 {
-    <FormSection Title="Datos del Solicitante" Icon="👤"
+    <FormSection Title="Datos del Solicitante"
                  Subtitle="Información de quien realiza la solicitud">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Nombre <span class="required">*</span></label>
-                <input type="text" class="field-input @(HasError("RequestorName") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Nombre <span class="required">*</span></label>
+                <input type="text" class="mo-form-control @(HasError("RequestorName") ? "invalid" : "")"
                        placeholder="Nombre completo"
                        @bind="_vm.RequestorName" @bind:event="oninput" />
                 @if (HasError("RequestorName"))
                 {
-                    <span class="field-error">El nombre es requerido</span>
+                    <span class="mo-form-error">El nombre es requerido</span>
                 }
             </div>
-            <div class="field-group">
-                <label class="field-label">Email <span class="required">*</span></label>
-                <input type="email" class="field-input @(HasError("RequestorEmail") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Email <span class="required">*</span></label>
+                <input type="email" class="mo-form-control @(HasError("RequestorEmail") ? "invalid" : "")"
                        placeholder="correo@empresa.com"
                        @bind="_vm.RequestorEmail" @bind:event="oninput" />
                 @if (HasError("RequestorEmail"))
                 {
-                    <span class="field-error">El email es requerido</span>
+                    <span class="mo-form-error">El email es requerido</span>
                 }
             </div>
         </FieldRow>
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Departamento <span class="required">*</span></label>
-                <input type="text" class="field-input @(HasError("Department") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Departamento <span class="required">*</span></label>
+                <input type="text" class="mo-form-control @(HasError("Department") ? "invalid" : "")"
                        placeholder="Ej: Ingeniería, Operaciones..."
                        @bind="_vm.Department" @bind:event="oninput" />
                 @if (HasError("Department"))
                 {
-                    <span class="field-error">El departamento es requerido</span>
+                    <span class="mo-form-error">El departamento es requerido</span>
                 }
             </div>
-            <div class="field-group">
-                <label class="field-label">Unidad de Negocio <span class="required">*</span></label>
-                <input type="text" class="field-input @(HasError("BusinessUnit") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Unidad de Negocio <span class="required">*</span></label>
+                <input type="text" class="mo-form-control @(HasError("BusinessUnit") ? "invalid" : "")"
                        placeholder="Ej: MX Plant A"
                        @bind="_vm.BusinessUnit" @bind:event="oninput" />
                 @if (HasError("BusinessUnit"))
                 {
-                    <span class="field-error">La unidad de negocio es requerida</span>
+                    <span class="mo-form-error">La unidad de negocio es requerida</span>
                 }
         </div>
     </FieldRow>
     <FieldRow>
-        <div class="field-group">
-            <label class="field-label">Fecha</label>
-            <input type="date" class="field-input"
+        <div class="mo-form-group">
+            <label class="mo-form-label">Fecha</label>
+            <input type="date" class="mo-form-control"
                    value="@_vm.RequestDate.ToString("yyyy-MM-dd")"
                    @onchange="e => _vm.RequestDate = string.IsNullOrEmpty(e.Value?.ToString())
                                                          ? DateTime.Now
                                                          : DateTime.Parse(e.Value.ToString()!)" />
         </div>
-        <div class="field-group">
-            <label class="field-label">Manager / Supervisor <span class="required">*</span></label>
-            <input type="text" class="field-input @(HasError("UserManagerName") ? "invalid" : "")"
+        <div class="mo-form-group">
+            <label class="mo-form-label">Manager / Supervisor <span class="required">*</span></label>
+            <input type="text" class="mo-form-control @(HasError("UserManagerName") ? "invalid" : "")"
                    placeholder="Nombre del manager"
                    @bind="_vm.UserManagerName" @bind:event="oninput" />
             @if (HasError("UserManagerName"))
                 {
-                    <span class="field-error">El nombre del manager es requerido</span>
+                    <span class="mo-form-error">El nombre del manager es requerido</span>
                 }
             </div>
         </FieldRow>
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Email del Manager <span class="required">*</span></label>
-                <input type="email" class="field-input @(HasError("UserManagerEmail") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Email del Manager <span class="required">*</span></label>
+                <input type="email" class="mo-form-control @(HasError("UserManagerEmail") ? "invalid" : "")"
                        placeholder="manager@empresa.com"
                        @bind="_vm.UserManagerEmail" @bind:event="oninput" />
                 @if (HasError("UserManagerEmail"))
                 {
-                    <span class="field-error">El email del manager es requerido</span>
+                    <span class="mo-form-error">El email del manager es requerido</span>
                 }
             </div>
             <div></div>
         </FieldRow>
     </FormSection>
 
-    <FormSection Title="Tipo de Envío" Icon="🌐">
+    <FormSection Title="Tipo de Envío">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Alcance <span class="required">*</span></label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Alcance <span class="required">*</span></label>
                 <div class="radio-group">
                     @foreach (var scope in Enum.GetValues<ShipmentScope>())
                     {
@@ -136,10 +136,10 @@
                     }
                 </div>
             </div>
-            <div class="field-group">
+            <div class="mo-form-group">
                 @if (_vm.Scope == ShipmentScope.Nacional)
                 {
-                    <label class="field-label">
+                    <label class="mo-form-label">
                         Categoría <span class="required">*</span>
                     </label>
                     <div class="radio-group">
@@ -151,12 +151,12 @@
                     </div>
                     @if (HasError("NationalCategory"))
                     {
-                        <span class="field-error">Selecciona Compras o Adquisición</span>
+                        <span class="mo-form-error">Selecciona Compras o Adquisición</span>
                     }
                 }
                 else
                 {
-                    <label class="field-label">Dirección <span class="required">*</span></label>
+                    <label class="mo-form-label">Dirección <span class="required">*</span></label>
                     <div class="radio-group">
                         @foreach (var dir in Enum.GetValues<ShipmentDirection>())
                         {
@@ -173,76 +173,76 @@
 <!-- PASO 1 — Comprador y Destinatario -->
 @if (_step == 1)
 {
-    <FormSection Title="Información del Comprador" Icon="🏢">
+    <FormSection Title="Información del Comprador">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Razón Social</label>
-                <input type="text" class="field-input" placeholder="Nombre de la empresa"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Razón Social</label>
+                <input type="text" class="mo-form-control" placeholder="Nombre de la empresa"
                        @bind="_vm.BuyerBusinessName" @bind:event="oninput" />
             </div>
-            <div class="field-group">
-                <label class="field-label">Tax ID / RFC</label>
-                <input type="text" class="field-input" placeholder="RFC o Tax ID"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Tax ID / RFC</label>
+                <input type="text" class="mo-form-control" placeholder="RFC o Tax ID"
                        @bind="_vm.BuyerTaxId" @bind:event="oninput" />
             </div>
         </FieldRow>
         <FieldRow Full="true">
-            <div class="field-group">
-                <label class="field-label">Dirección</label>
-                <textarea class="field-textarea"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Dirección</label>
+                <textarea class="mo-form-control"
                           placeholder="Calle, ciudad, estado, código postal, país"
                           @bind="_vm.BuyerAddress" @bind:event="oninput"></textarea>
             </div>
         </FieldRow>
     </FormSection>
 
-    <FormSection Title="Recolección / Destinatario" Icon="📍"
+    <FormSection Title="Recolección / Destinatario"
                  Subtitle="Datos de quien recibe el envío">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Razón Social <span class="required">*</span></label>
-                <input type="text" class="field-input @(HasError("RecipientBusinessName") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Razón Social <span class="required">*</span></label>
+                <input type="text" class="mo-form-control @(HasError("RecipientBusinessName") ? "invalid" : "")"
                        placeholder="Nombre de la empresa"
                        @bind="_vm.RecipientBusinessName" @bind:event="oninput" />
                 @if (HasError("RecipientBusinessName"))
                 {
-                    <span class="field-error">La razón social es requerida</span>
+                    <span class="mo-form-error">La razón social es requerida</span>
                 }
             </div>
-            <div class="field-group">
-                <label class="field-label">Tax ID / RFC</label>
-                <input type="text" class="field-input" placeholder="RFC o Tax ID"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Tax ID / RFC</label>
+                <input type="text" class="mo-form-control" placeholder="RFC o Tax ID"
                        @bind="_vm.RecipientTaxId" @bind:event="oninput" />
             </div>
         </FieldRow>
         <FieldRow Full="true">
-            <div class="field-group">
-                <label class="field-label">Dirección <span class="required">*</span></label>
-                <textarea class="field-textarea @(HasError("RecipientAddress") ? "invalid" : "")"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Dirección <span class="required">*</span></label>
+                <textarea class="mo-form-control @(HasError("RecipientAddress") ? "invalid" : "")"
                           placeholder="Calle, ciudad, estado, código postal, país"
                           @bind="_vm.RecipientAddress" @bind:event="oninput"></textarea>
                 @if (HasError("RecipientAddress"))
                 {
-                    <span class="field-error">La dirección es requerida</span>
+                    <span class="mo-form-error">La dirección es requerida</span>
                 }
             </div>
         </FieldRow>
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Atención a</label>
-                <input type="text" class="field-input" placeholder="Nombre de contacto"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Atención a</label>
+                <input type="text" class="mo-form-control" placeholder="Nombre de contacto"
                        @bind="_vm.RecipientAttentionTo" @bind:event="oninput" />
             </div>
-            <div class="field-group">
-                <label class="field-label">Teléfono</label>
-                <input type="text" class="field-input" placeholder="+52 xxx xxx xxxx"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Teléfono</label>
+                <input type="text" class="mo-form-control" placeholder="+52 xxx xxx xxxx"
                        @bind="_vm.RecipientPhone" @bind:event="oninput" />
             </div>
         </FieldRow>
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Correo</label>
-                <input type="email" class="field-input" placeholder="contacto@empresa.com"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Correo</label>
+                <input type="email" class="mo-form-control" placeholder="contacto@empresa.com"
                        @bind="_vm.RecipientEmail" @bind:event="oninput" />
             </div>
             <div></div>
@@ -253,10 +253,10 @@
 <!-- PASO 2 — Detalles de Envío -->
 @if (_step == 2)
 {
-    <FormSection Title="Detalles del Envío" Icon="🚢">
+    <FormSection Title="Detalles del Envío">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Vía de Envío</label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Vía de Envío</label>
                 <div class="radio-group">
                     @foreach (var way in Enum.GetValues<ShippingWay>())
                     {
@@ -267,8 +267,8 @@
                     }
                 </div>
             </div>
-            <div class="field-group">
-                <label class="field-label">Tipo de Servicio</label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Tipo de Servicio</label>
                 <div class="radio-group">
                     @foreach (var st in Enum.GetValues<ServiceType>())
                     {
@@ -281,9 +281,9 @@
         </div>
     </FieldRow>
     <FieldRow>
-        <div class="field-group">
-            <label class="field-label">Fecha de Entrega</label>
-            <input type="date" class="field-input"
+        <div class="mo-form-group">
+            <label class="mo-form-label">Fecha de Entrega</label>
+            <input type="date" class="mo-form-control"
                    value="@_vm.DeliveryDate?.ToString("yyyy-MM-dd")"
                    @onchange="e => _vm.DeliveryDate = string.IsNullOrEmpty(e.Value?.ToString())
                                                          ? null
@@ -292,23 +292,23 @@
         <div></div>
     </FieldRow>
     <FieldRow Full="true">
-        <div class="field-group">
-            <label class="field-label">Propósito del Envío <span class="required">*</span></label>
-            <textarea class="field-textarea @(HasError("ShipmentPurpose") ? "invalid" : "")"
+        <div class="mo-form-group">
+            <label class="mo-form-label">Propósito del Envío <span class="required">*</span></label>
+            <textarea class="mo-form-control @(HasError("ShipmentPurpose") ? "invalid" : "")"
                       placeholder="Describe el motivo del envío..."
                       @bind="_vm.ShipmentPurpose" @bind:event="oninput"></textarea>
             @if (HasError("ShipmentPurpose"))
                 {
-                    <span class="field-error">El propósito del envío es requerido</span>
+                    <span class="mo-form-error">El propósito del envío es requerido</span>
                 }
             </div>
         </FieldRow>
     </FormSection>
 
-    <FormSection Title="Información de Factura" Icon="🧾">
+    <FormSection Title="Información de Factura">
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Tipo de Factura</label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Tipo de Factura</label>
                 <div class="radio-group">
                     @foreach (var t in Enum.GetValues<InvoiceType>())
                     {
@@ -317,8 +317,8 @@
                     }
                 </div>
             </div>
-            <div class="field-group">
-                <label class="field-label">Tipo de Operación</label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Tipo de Operación</label>
                 <div class="radio-group">
                     @foreach (var op in Enum.GetValues<OperationType>())
                     {
@@ -329,8 +329,8 @@
             </div>
         </FieldRow>
         <FieldRow Full="true">
-            <div class="field-group">
-                <label class="field-label">
+            <div class="mo-form-group">
+                <label class="mo-form-label">
                     Tramos de Flete Aplicables <span class="required">*</span>
                 </label>
                 <div class="radio-group">
@@ -349,7 +349,7 @@
                 </div>
                 @if (HasError("Freight"))
                 {
-                    <span class="field-error">Selecciona al menos un tramo de flete</span>
+                    <span class="mo-form-error">Selecciona al menos un tramo de flete</span>
                 }
                 <div style="font-size:0.78rem;color:#64748b;margin-top:0.4rem;">
                     El equipo de Trade Staff determinará el Incoterm aplicable con base en
@@ -360,9 +360,9 @@
         @if (_vm.Scope == ShipmentScope.Internacional && _vm.Direction == ShipmentDirection.Import)
         {
             <FieldRow>
-                <div class="field-group">
-                    <label class="field-label">Número de Factura</label>
-                    <input type="text" class="field-input" placeholder="INV-0001"
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Número de Factura</label>
+                    <input type="text" class="mo-form-control" placeholder="INV-0001"
                            @bind="_vm.InvoiceNumber" @bind:event="oninput" />
                 </div>
                 <div></div>
@@ -374,9 +374,9 @@
         </div>
     </FormSection>
 
-    <FormSection Title="Opciones Logísticas" Icon="⚙️">
+    <FormSection Title="Opciones Logísticas">
         <div style="margin-bottom:0.85rem;">
-            <label class="field-label">
+            <label class="mo-form-label">
                 ¿Es Estibable? <span class="required">*</span>
             </label>
             <div style="margin-top:0.4rem;">
@@ -384,33 +384,33 @@
                     <span class="radio-chip @(_stackableSelected && _vm.IsStackable ? "selected" : "")"
                           style="@(_stackableSelected && !_vm.IsStackable ? "opacity:0.5" : "")"
                           @onclick="() => { _vm.IsStackable = true; _stackableSelected = true; _showStackableError = false; }">
-                        ✅ Sí — La carga puede apilarse
+                         Sí — La carga puede apilarse
                     </span>
                     <span class="radio-chip @(_stackableSelected && !_vm.IsStackable ? "selected" : "")"
                           style="@(_stackableSelected && _vm.IsStackable ? "opacity:0.5" : "")"
                           @onclick="() => { _vm.IsStackable = false; _stackableSelected = true; _showStackableError = false; }">
-                        ❌ No — No debe apilarse
+                         No — No debe apilarse
                     </span>
                 </div>
                 @if (_showStackableError)
                 {
-                    <span class="field-error">Debe indicar si la carga es estibable o no</span>
+                    <span class="mo-form-error">Debe indicar si la carga es estibable o no</span>
                 }
             </div>
         </div>
 
-        <div class="toggle-row @(_vm.HasInsurance ? "checked" : "")"
-             @onclick="() => _vm.HasInsurance = !_vm.HasInsurance">
-            <input type="checkbox" checked="@_vm.HasInsurance" style="accent-color:#1d4ed8;" />
-            <div>
-                <div class="toggle-label">Seguro de Envío</div>
-                <div class="toggle-desc">¿Requiere seguro para este envío?</div>
-            </div>
+        <div class="mo-form-group">
+            <label class="mo-toggle">
+                <input type="checkbox" @bind="_vm.HasInsurance" />
+                <span class="mo-toggle-track"></span>
+                <span>Seguro de Envío</span>
+            </label>
+            <div class="mo-form-hint">¿Requiere seguro para este envío?</div>
         </div>
 
         <FieldRow>
-            <div class="field-group">
-                <label class="field-label">Responsabilidad de Pago</label>
+            <div class="mo-form-group">
+                <label class="mo-form-label">Responsabilidad de Pago</label>
                 <div class="radio-group">
                     @foreach (var pr in Enum.GetValues<PaymentResponsibility>())
                     {
@@ -421,9 +421,9 @@
             </div>
             @if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver)
             {
-                <div class="field-group">
-                    <label class="field-label">Parcel Account</label>
-                    <input type="text" class="field-input"
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Parcel Account</label>
+                    <input type="text" class="mo-form-control"
                            placeholder="Número de cuenta del receptor"
                            @bind="_vm.ParcelAccount" @bind:event="oninput" />
                 </div>
@@ -432,8 +432,8 @@
         @if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver)
         {
             <FieldRow>
-                <div class="field-group">
-                    <label class="field-label">Paquetería</label>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Paquetería</label>
                     <div class="radio-group">
                         @foreach (var c in Enum.GetValues<ParcelCarrier>())
                         {
@@ -451,7 +451,7 @@
 <!-- PASO 3 — Paquetes e Items -->
 @if (_step == 3)
 {
-    <FormSection Title="Paquetes e Items" Icon="📦"
+    <FormSection Title="Paquetes e Items"
                  Subtitle="Agrega pallets, cajas e items del envío">
         <PackageBuilder Packages="_vm.Packages" OnChanged="StateHasChanged" />
     </FormSection>
@@ -460,13 +460,13 @@
 <!-- PASO 4 — Evidencias Fotográficas -->
 @if (_step == 4)
 {
-    <FormSection Title="Evidencias Fotográficas" Icon="📷"
+    <FormSection Title="Evidencias Fotográficas"
                  Subtitle="Sube las 4 fotografías requeridas antes de continuar">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
             @foreach (var slot in _evidenceSlots)
             {
-                <div class="field-group">
-                    <label class="field-label">
+                <div class="mo-form-group">
+                    <label class="mo-form-label">
                         @slot.Label <span class="required">*</span>
                     </label>
                     @if (slot.File is not null || !string.IsNullOrEmpty(slot.GetPath()))
@@ -474,13 +474,12 @@
                         <div style="display:flex;align-items:center;gap:0.75rem;
                                     padding:0.75rem 1rem;background:#f0fdf4;
                                     border:1.5px solid #86efac;border-radius:12px;">
-                            <span style="font-size:1.2rem;">🖼️</span>
                             <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
                                         white-space:nowrap;font-weight:700;color:#15803d;
                                         font-size:0.85rem;">
                                 @(slot.File?.Name ?? "Foto cargada")
                             </div>
-                            <button type="button" class="pkg-btn del"
+                            <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                     style="padding:0.3rem 0.65rem;"
                                     @onclick="() => ClearEvidence(slot)">
                                 Cambiar
@@ -496,17 +495,14 @@
                                        style="display:none;"
                                        id="@($"evidence-{slot.Key}")" />
                             <label for="@($"evidence-{slot.Key}")"
-                                   style="display:inline-flex;align-items:center;gap:0.4rem;
-                                          padding:0.5rem 1.1rem;border-radius:10px;background:#eff6ff;
-                                          color:#1d4ed8;font-weight:700;font-size:0.84rem;
-                                          cursor:pointer;border:1.5px solid #bfdbfe;">
-                                📂 Seleccionar Foto
+                                   class="mo-btn mo-btn-primary-outline mo-btn-sm">
+                                Seleccionar Foto
                             </label>
                         </div>
                     }
                     @if (!string.IsNullOrEmpty(slot.Error))
                     {
-                        <span class="field-error">@slot.Error</span>
+                        <span class="mo-form-error">@slot.Error</span>
                     }
                 </div>
             }
@@ -517,19 +513,19 @@
 <!-- PASO 5 — Observaciones -->
 @if (_step == 5)
 {
-    <FormSection Title="Observaciones del Solicitante" Icon="💬">
+    <FormSection Title="Observaciones del Solicitante">
         <FieldRow Full="true">
-            <div class="field-group">
-                <label class="field-label">Observaciones</label>
-                <textarea class="field-textarea"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Observaciones</label>
+                <textarea class="mo-form-control"
                           placeholder="Notas o comentarios adicionales..."
                           @bind="_vm.RequestorObservations" @bind:event="oninput"></textarea>
             </div>
         </FieldRow>
         <FieldRow Full="true">
-            <div class="field-group">
-                <label class="field-label">Folio Baja de Material (MX-7104-F1)</label>
-                <input type="text" class="field-input" placeholder="MX-7104-F1-XXXX"
+            <div class="mo-form-group">
+                <label class="mo-form-label">Folio Baja de Material (MX-7104-F1)</label>
+                <input type="text" class="mo-form-control" placeholder="MX-7104-F1-XXXX"
                        value="@_vm.MaterialBajaFolio"
                        @oninput="OnFolioInput" />
             </div>
@@ -538,21 +534,21 @@
         @if (string.IsNullOrWhiteSpace(_vm.MaterialBajaFolio))
         {
             <FieldRow Full="true">
-                <div class="field-group"
+                <div class="mo-form-group"
                      style="background:#fefce8;border:1.5px solid #fde047;
                                     border-radius:14px;padding:1rem;">
-                    <label class="field-label" style="color:#854d0e;">
-                        ⚠️ Motivo por el que no aplica el Folio
+                    <label class="mo-form-label" style="color:#854d0e;">
+                         Motivo por el que no aplica el Folio
                         <span class="required">*</span>
                     </label>
-                    <textarea class="field-textarea"
+                    <textarea class="mo-form-control"
                               placeholder="Explica por qué no se cuenta con el folio..."
                               style="border-color:#fde047;background:#fff;"
                               @bind="_vm.FolioJustification"
                               @bind:event="oninput"></textarea>
                     @if (_showFolioError)
                     {
-                        <span class="field-error">Debes explicar por qué no aplica el folio</span>
+                        <span class="mo-form-error">Debes explicar por qué no aplica el folio</span>
                     }
                 </div>
             </FieldRow>
@@ -578,15 +574,15 @@
     <div style="display:flex;gap:0.75rem;">
         @if (_step > 0)
         {
-            <button type="button" class="btn-nav prev" @onclick="PrevStep">← Anterior</button>
+            <button type="button" class="mo-btn mo-btn-secondary" @onclick="PrevStep">← Anterior</button>
         }
         @if (_step < _steps.Length - 1)
         {
-            <button type="button" class="btn-nav next" @onclick="NextStep">Siguiente →</button>
+            <button type="button" class="mo-btn mo-btn-primary" @onclick="NextStep">Siguiente →</button>
         }
         else
         {
-            <button type="button" class="btn-nav submit"
+            <button type="button" class="mo-btn mo-btn-success"
                     disabled="@_submitting" @onclick="HandleSubmit">
                 @if (_submitting)
                 {
@@ -606,7 +602,7 @@
 {
     <div style="margin-top:1rem;padding:1rem;background:#fef2f2;border:1px solid #fecaca;
                     border-radius:14px;color:#dc2626;font-weight:700;">
-        ⚠️ @_errorMsg
+         @_errorMsg
     </div>
 }
 

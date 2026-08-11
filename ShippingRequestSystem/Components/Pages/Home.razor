@@ -8,29 +8,21 @@
 
 <PageTitle>Dashboard — Shipping Request System</PageTitle>
 
-<div class="index-page">
-
-    <!-- Hero -->
-    <div class="index-hero">
-        <div class="index-hero-left">
-            <div class="index-kicker">🚚 Shipping Request System</div>
-            <h1>Control de<br />Envíos</h1>
-            <p class="hero-text">
-                Gestiona solicitudes de importación y exportación, da seguimiento
-                al flujo de aprobaciones y mantén trazabilidad completa de cada envío.
-            </p>
-            <div class="hero-meta">
-                <span class="meta-chip">📦 Paquetes inteligentes</span>
-                <span class="meta-chip">✅ Flujo de aprobación</span>
-                <span class="meta-chip">⭐ Premium Freight</span>
-            </div>
-        </div>
-        <div class="hero-actions">
-            <a href="/requests/new" class="hero-btn primary">+ Nueva Solicitud</a>
-            <a href="/requests" class="hero-btn">Ver Mis Solicitudes</a>
-            <a href="/approvals" class="hero-btn">Aprobaciones Pendientes</a>
+<!-- Banner -->
+<div id="mo-banner">
+    <div class="mo-banner-orb mo-banner-orb-1"></div>
+    <div class="mo-banner-orb mo-banner-orb-2"></div>
+    <div id="mo-banner-content">
+        <div id="mo-banner-tag">Shipping Request System</div>
+        <div id="mo-banner-title">Control de Envíos</div>
+        <div id="mo-banner-sub">
+            Gestiona solicitudes de importación y exportación, da seguimiento
+            al flujo de aprobaciones y mantén trazabilidad completa de cada envío.
         </div>
     </div>
+</div>
+
+<div class="index-page">
 
     <!-- Stats -->
     @if (_loading)
@@ -62,7 +54,7 @@
             </div>
             <div class="stat-card">
                 <span>Premium Freight</span>
-                <strong style="color:#7c3aed;">@_premium</strong>
+                <strong style="color:var(--mo-blue-deep);">@_premium</strong>
                 <p>Solicitudes ≥ $5,000 USD</p>
             </div>
         </div>

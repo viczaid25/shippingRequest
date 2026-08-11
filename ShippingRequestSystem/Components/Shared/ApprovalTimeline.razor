@@ -1,4 +1,4 @@
-﻿<h3>ApprovalTimeline</h3>
+<h3>ApprovalTimeline</h3>
 
 @code {
 
@@ -52,7 +52,7 @@
                     string commentClass = step.IsApproved == true ? "approved"
                     : step.IsApproved == false ? "rejected" : "";
                     <div class="timeline-comment @commentClass">
-                        💬 @step.Comments
+                         @step.Comments
                     </div>
                 }
             </div>
@@ -73,7 +73,7 @@
     private static string GetIcon(ApprovalStep s)
     {
         if (!s.IsRequired && !s.IsCompleted) return "—";
-        if (!s.IsCompleted) return "⏳";
+        if (!s.IsCompleted) return "";
         return s.IsApproved == true ? "✓" : "✕";
     }
 }

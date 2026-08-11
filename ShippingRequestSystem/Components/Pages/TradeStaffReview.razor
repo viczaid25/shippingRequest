@@ -1,4 +1,4 @@
-﻿@page "/requests/{Id:int}/staff-review"
+@page "/requests/{Id:int}/staff-review"
 @using ShippingRequestSystem.Models
 @using ShippingRequestSystem.ViewModels
 @using ShippingRequestSystem.Services
@@ -23,10 +23,10 @@ else if (_request is null)
 {
     <div class="empty-state compact">Solicitud no encontrada.</div>
 }
-else if (!CurrentUser.IsTradeStaff)
+else if (!_isAuthorized)
 {
     <div class="empty-state compact">
-        ⛔ No tienes permiso para acceder a esta sección.
+        No tienes permiso para acceder a esta sección.
     </div>
 }
 else
@@ -36,7 +36,7 @@ else
         <!-- Hero -->
         <div class="detail-hero">
             <div class="detail-hero-left">
-                <div class="detail-hero-id">📋 REVISIÓN TRADE STAFF · #@_request.Id</div>
+                <div class="detail-hero-id">REVISIÓN TRADE STAFF · #@_request.Id</div>
                 <h1>@_request.RecipientBusinessName</h1>
                 <div style="color:rgba(255,255,255,0.7);font-size:0.92rem;">
                     @_request.RequestorName · @_request.Department
@@ -50,7 +50,6 @@ else
         <!-- Resumen -->
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">📋</div>
                 <h3 class="info-card-title">Resumen de la Solicitud</h3>
             </div>
             <div class="info-card-body"
@@ -67,27 +66,26 @@ else
         <!-- IGI e Incoterm -->
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">📊</div>
                 <h3 class="info-card-title">Porcentaje IGI e Incoterm</h3>
             </div>
             <div class="info-card-body" style="display:flex;gap:1.5rem;flex-wrap:wrap;">
-                <div class="field-group" style="max-width:280px;">
-                    <label class="field-label">
+                <div class="mo-form-group" style="max-width:280px;">
+                    <label class="mo-form-label">
                         % IGI <span style="color:#ef4444;">*</span>
                     </label>
-                    <input type="number" class="field-input @(_igiError ? "invalid" : "")"
+                    <input type="number" class="mo-form-control @(_igiError ? "invalid" : "")"
                            step="0.01" min="0" max="100"
                            placeholder="0.00" @bind="_igi" />
                     @if (_igiError)
                     {
-                        <span class="field-error">El % IGI debe ser mayor a 0</span>
+                        <span class="mo-form-error">El % IGI debe ser mayor a 0</span>
                     }
                 </div>
-                <div class="field-group" style="max-width:280px;">
-                    <label class="field-label">
+                <div class="mo-form-group" style="max-width:280px;">
+                    <label class="mo-form-label">
                         Incoterm Aplicable <span style="color:#ef4444;">*</span>
                     </label>
-                    <select class="field-select @(_incotermError ? "invalid" : "")" @bind="_incoterm">
+                    <select class="mo-form-select @(_incotermError ? "invalid" : "")" @bind="_incoterm">
                         <option value="">Seleccionar...</option>
                         <option>EXW</option>
                         <option>FCA</option>
@@ -103,7 +101,7 @@ else
                     </select>
                     @if (_incotermError)
                     {
-                        <span class="field-error">Debes asignar un Incoterm</span>
+                        <span class="mo-form-error">Debes asignar un Incoterm</span>
                     }
                     <div style="font-size:0.78rem;color:#64748b;margin-top:0.35rem;">
                         Tramos marcados por el solicitante:
@@ -118,23 +116,22 @@ else
         <!-- Certificado de Origen (COO) -->
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">📜</div>
                 <h3 class="info-card-title">Certificado de Origen (COO)</h3>
             </div>
             <div class="info-card-body">
-                <div class="toggle-row @(_hasCoo ? "checked" : "")"
-                     @onclick="() => _hasCoo = !_hasCoo">
-                    <input type="checkbox" checked="@_hasCoo" style="accent-color:#1d4ed8;" />
-                    <div>
-                        <div class="toggle-label">Este envío requiere Certificado de Origen</div>
-                        <div class="toggle-desc">Actívalo y sube el documento correspondiente</div>
-                    </div>
+                <div class="mo-form-group">
+                    <label class="mo-toggle">
+                        <input type="checkbox" @bind="_hasCoo" />
+                        <span class="mo-toggle-track"></span>
+                        <span>Este envío requiere Certificado de Origen</span>
+                    </label>
+                    <div class="mo-form-hint">Actívalo y sube el documento correspondiente</div>
                 </div>
 
                 @if (_hasCoo)
                 {
-                    <div class="field-group" style="margin-top:0.85rem;max-width:420px;">
-                        <label class="field-label">
+                    <div class="mo-form-group" style="margin-top:0.85rem;max-width:420px;">
+                        <label class="mo-form-label">
                             Documento COO (PDF) <span style="color:#ef4444;">*</span>
                         </label>
 
@@ -143,13 +140,12 @@ else
                             <div style="display:flex;align-items:center;gap:0.75rem;
                                         padding:0.75rem 1rem;background:#f0fdf4;
                                         border:1.5px solid #86efac;border-radius:12px;">
-                                <span style="font-size:1.2rem;">📄</span>
                                 <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
                                             white-space:nowrap;font-weight:700;color:#15803d;
                                             font-size:0.85rem;">
                                     @(_cooFile?.Name ?? "Documento cargado")
                                 </div>
-                                <button type="button" class="pkg-btn del" style="padding:0.3rem 0.65rem;"
+                                <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm" style="padding:0.3rem 0.65rem;"
                                         @onclick="ClearCooFile">
                                     Cambiar
                                 </button>
@@ -161,18 +157,14 @@ else
                                         border-radius:12px;padding:1.1rem;text-align:center;background:#fff;">
                                 <InputFile OnChange="OnCooFileSelected" accept=".pdf"
                                            style="display:none;" id="coo-file" />
-                                <label for="coo-file"
-                                       style="display:inline-flex;align-items:center;gap:0.4rem;
-                                              padding:0.5rem 1.1rem;border-radius:10px;background:#eff6ff;
-                                              color:#1d4ed8;font-weight:700;font-size:0.84rem;
-                                              cursor:pointer;border:1.5px solid #bfdbfe;">
-                                    📂 Seleccionar PDF
+                                <label for="coo-file" class="mo-btn mo-btn-primary-outline mo-btn-sm">
+                                    Seleccionar PDF
                                 </label>
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(_cooError))
                         {
-                            <span class="field-error">@_cooError</span>
+                            <span class="mo-form-error">@_cooError</span>
                         }
                     </div>
                 }
@@ -182,7 +174,6 @@ else
         <!-- Cotizaciones con PDF -->
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">💲</div>
                 <h3 class="info-card-title">Cotizaciones de Envío</h3>
                 <span style="font-size:0.82rem;color:#64748b;margin-left:auto;">
                     Mínimo 3 · cada una requiere su PDF
@@ -206,7 +197,7 @@ else
                                 </span>
                                 @if (_quotes.Count > 3)
                                 {
-                                    <button type="button" class="pkg-btn del"
+                                    <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                             @onclick="() => RemoveQuote(idx)">
                                         ✕ Eliminar
                                     </button>
@@ -216,33 +207,33 @@ else
                             <!-- Campos de datos -->
                             <div style="display:grid;grid-template-columns:1fr 160px 1fr;
                                                 gap:0.85rem;margin-bottom:1rem;">
-                                <div class="field-group">
-                                    <label class="field-label">
+                                <div class="mo-form-group">
+                                    <label class="mo-form-label">
                                         Proveedor <span style="color:#ef4444;">*</span>
                                     </label>
-                                    <input type="text" class="field-input"
+                                    <input type="text" class="mo-form-control"
                                            placeholder="Nombre del proveedor"
                                            @bind="q.ProviderName" @bind:event="oninput" />
                                 </div>
-                                <div class="field-group">
-                                    <label class="field-label">
+                                <div class="mo-form-group">
+                                    <label class="mo-form-label">
                                         Monto (USD) <span style="color:#ef4444;">*</span>
                                     </label>
-                                    <input type="number" class="field-input"
+                                    <input type="number" class="mo-form-control"
                                            step="0.01" min="0" placeholder="0.00"
                                            @bind="q.Amount" @bind:event="oninput" />
                                 </div>
-                                <div class="field-group">
-                                    <label class="field-label">Notas / Condiciones</label>
-                                    <input type="text" class="field-input"
+                                <div class="mo-form-group">
+                                    <label class="mo-form-label">Notas / Condiciones</label>
+                                    <input type="text" class="mo-form-control"
                                            placeholder="Tiempo de entrega, transit time..."
                                            @bind="q.Notes" @bind:event="oninput" />
                                 </div>
                             </div>
 
                             <!-- Subida de PDF -->
-                            <div class="field-group">
-                                <label class="field-label">
+                            <div class="mo-form-group">
+                                <label class="mo-form-label">
                                     PDF de Cotización <span style="color:#ef4444;">*</span>
                                 </label>
 
@@ -252,8 +243,7 @@ else
                                     <div style="display:flex;align-items:center;gap:0.75rem;
                                                             padding:0.75rem 1rem;background:#f0fdf4;
                                                             border:1.5px solid #86efac;border-radius:12px;">
-                                        <span style="font-size:1.2rem;">📄</span>
-                                        <div style="flex:1;min-width:0;">
+                                                <div style="flex:1;min-width:0;">
                                             <div style="font-weight:700;color:#15803d;
                                                                     font-size:0.88rem;
                                                                     overflow:hidden;text-overflow:ellipsis;
@@ -267,7 +257,7 @@ else
                                                 </div>
                                             }
                                         </div>
-                                        <button type="button" class="pkg-btn del"
+                                        <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                                 style="padding:0.3rem 0.65rem;"
                                                 @onclick="() => ClearFile(idx)">
                                             Cambiar
@@ -281,7 +271,6 @@ else
                                                             border-radius:12px;padding:1.25rem;
                                                             text-align:center;background:#fff;
                                                             transition:all 0.18s ease;">
-                                        <div style="font-size:1.5rem;margin-bottom:0.4rem;">📎</div>
                                         <div style="font-size:0.84rem;color:#64748b;
                                                                 margin-bottom:0.65rem;">
                                             Arrastra el PDF aquí o haz clic para seleccionar
@@ -291,14 +280,8 @@ else
                                                    style="display:none;"
                                                    id="@($"file-{idx}")" />
                                         <label for="@($"file-{idx}")"
-                                               style="display:inline-flex;align-items:center;
-                                                                  gap:0.4rem;padding:0.5rem 1.1rem;
-                                                                  border-radius:10px;background:#eff6ff;
-                                                                  color:#1d4ed8;font-weight:700;
-                                                                  font-size:0.84rem;cursor:pointer;
-                                                                  border:1.5px solid #bfdbfe;
-                                                                  transition:all 0.18s ease;">
-                                            📂 Seleccionar PDF
+                                               class="mo-btn mo-btn-primary-outline mo-btn-sm">
+                                            Seleccionar PDF
                                         </label>
                                         <div style="font-size:0.72rem;color:#94a3b8;
                                                                 margin-top:0.5rem;">
@@ -309,7 +292,7 @@ else
 
                                 @if (!string.IsNullOrEmpty(q.FileError))
                                 {
-                                    <span class="field-error">@q.FileError</span>
+                                    <span class="mo-form-error">@q.FileError</span>
                                 }
                             </div>
                         </div>
@@ -318,7 +301,7 @@ else
 
                 @if (_quotes.Count < 5)
                 {
-                    <button type="button" class="pkg-btn add"
+                    <button type="button" class="mo-btn mo-btn-secondary-outline mo-btn-sm"
                             style="margin-top:1rem;padding:0.6rem 1.2rem;border-radius:12px;"
                             @onclick="AddQuote">
                         + Agregar Cotización
@@ -331,17 +314,17 @@ else
         {
             <div style="padding:0.85rem 1rem;background:#fef2f2;border:1px solid #fecaca;
                                 border-radius:14px;color:#dc2626;font-weight:700;">
-                ⚠️ @_errorMsg
+                 @_errorMsg
             </div>
         }
 
         <div class="form-nav">
-            <a href="/requests/@Id" class="btn-nav prev">← Volver al Detalle</a>
-            <button type="button" class="btn-nav submit" @onclick="Submit"
+            <a href="/requests/@Id" class="mo-btn mo-btn-secondary">← Volver al Detalle</a>
+            <button type="button" class="mo-btn mo-btn-success" @onclick="Submit"
                     disabled="@_submitting">
                 @if (_submitting)
                 {
-                    <span>⏳ Guardando archivos...</span>
+                    <span>Guardando archivos...</span>
                 }
                 else
                 {
@@ -371,6 +354,7 @@ else
     private bool _cooHasFile = false;
     private string? _cooSavedFilePath;
     private string? _cooError;
+    private bool _isAuthorized = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -378,6 +362,11 @@ else
 
         if (_request is not null)
         {
+            _isAuthorized = _request.ApprovalSteps.Any(s =>
+                s.RoleName == "Trade Staff" &&
+                string.Equals(s.ApproverEmail, CurrentUser.Email,
+                              StringComparison.OrdinalIgnoreCase));
+
             _igi = _request.IgiPercentage;
             _incoterm = _request.Incoterm ?? string.Empty;
             _hasCoo = _request.HasCOO;
