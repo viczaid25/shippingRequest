@@ -24,7 +24,6 @@ public class QuoteService : IQuoteService
         await using var db = await _factory.CreateDbContextAsync();
 
         var request = await db.ShippingRequests
-            .Include(r => r.ApprovalSteps)
             .FirstOrDefaultAsync(r => r.Id == requestId)
             ?? throw new Exception("Solicitud no encontrada");
 
@@ -35,13 +34,9 @@ public class QuoteService : IQuoteService
         request.UpdatedAt = DateTime.UtcNow;
         request.Status = RequestStatus.PendingUserQuoteSelection;
 
-        var tradeStaffStep = request.ApprovalSteps.FirstOrDefault(s => s.RoleName == "Trade Staff");
-        if (tradeStaffStep is not null && !tradeStaffStep.IsCompleted)
-        {
-            tradeStaffStep.IsCompleted = true;
-            tradeStaffStep.IsApproved = true;
-            tradeStaffStep.ActionDate = DateTime.UtcNow;
-        }
+        // El paso de aprobación "Trade Staff" es la firma formal que ahora ocurre
+        // al final de la cadena (después de President) — no se marca aquí; esto
+        // solo es la captura inicial de IGI/Incoterm/cotizaciones.
 
         foreach (var q in quotes)
         {
@@ -79,9 +74,11 @@ public class QuoteService : IQuoteService
             request.InvoiceType == InvoiceType.Comercial ||
             request.ApproximateCost >= 5000;
 
+        // Si no requiere Premium Freight, entra directo a la cadena formal —
+        // el primer paso siempre es User Manager (ver ApprovalService.BuildApprovalFlow).
         request.Status = requiresPremiumFreight
             ? RequestStatus.PendingPremiumFreight
-            : RequestStatus.PendingTradeStaffApproval;
+            : RequestStatus.PendingUserManager;
 
         await db.SaveChangesAsync();
         return true;
@@ -130,7 +127,17 @@ public class QuoteService : IQuoteService
                 salesStep.IsRequired = true;
         }
 
-        request.Status = RequestStatus.PendingTradeStaffApproval;
+        if (pf.Payment == PremiumFreightPayment.ReimbursableBySupplier)
+        {
+            var procurementStep = request.ApprovalSteps
+                .FirstOrDefault(s => s.RoleName == "Procurement Manager");
+            if (procurementStep is not null)
+                procurementStep.IsRequired = true;
+        }
+
+        // El primer paso de la cadena formal siempre es User Manager
+        // (ver ApprovalService.BuildApprovalFlow).
+        request.Status = RequestStatus.PendingUserManager;
         request.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();

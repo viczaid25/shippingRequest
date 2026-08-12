@@ -35,10 +35,12 @@ public class ApprovalService : IApprovalService
             };
         }
 
-        steps.Add(MakeStep("Trade Staff", true));
-        steps.Add(MakeStep("Trade Coordinator", true));
-        steps.Add(MakeStep("Trade Manager", true));
-
+        // Orden de la cadena formal (después de que el solicitante elige cotización
+        // y, si aplica, llena Premium Freight):
+        // 1) User Manager  2) Sales Manager (si PF es Reembolsable por Cliente)
+        // 3) Procurement Manager (si PF es Reembolsable por Proveedor)
+        // 4) Finance Manager  5) President  6) Trade Staff (aprobación formal)
+        // 7) Trade Manager  8) Trade Coordinator
         steps.Add(new ApprovalStep
         {
             StepOrder = order++,
@@ -48,11 +50,15 @@ public class ApprovalService : IApprovalService
             IsRequired = true
         });
 
-        steps.Add(MakeStep("Procurement Manager",
-            required: request.OperationType == OperationType.RT));
+        // Sales Manager / Procurement Manager: no se sabe si aplican hasta que
+        // se llena Premium Freight (ver QuoteService.SavePremiumFreightAsync).
         steps.Add(MakeStep("Sales Manager", false));
+        steps.Add(MakeStep("Procurement Manager", false));
         steps.Add(MakeStep("Finance Manager", true));
         steps.Add(MakeStep("President", true));
+        steps.Add(MakeStep("Trade Staff", true));
+        steps.Add(MakeStep("Trade Manager", true));
+        steps.Add(MakeStep("Trade Coordinator", true));
 
         return steps;
     }
@@ -97,13 +103,14 @@ public class ApprovalService : IApprovalService
                 ? RequestStatus.Approved
                 : nextStep.RoleName switch
                 {
-                    "Trade Coordinator" => RequestStatus.PendingTradeCoordinator,
-                    "Trade Manager" => RequestStatus.PendingTradeManager,
                     "User Manager" => RequestStatus.PendingUserManager,
-                    "Procurement Manager" => RequestStatus.PendingProcurementManager,
                     "Sales Manager" => RequestStatus.PendingSalesManager,
+                    "Procurement Manager" => RequestStatus.PendingProcurementManager,
                     "Finance Manager" => RequestStatus.PendingFinanceManager,
                     "President" => RequestStatus.PendingPresident,
+                    "Trade Staff" => RequestStatus.PendingTradeStaffApproval,
+                    "Trade Manager" => RequestStatus.PendingTradeManager,
+                    "Trade Coordinator" => RequestStatus.PendingTradeCoordinator,
                     _ => request.Status
                 };
         }

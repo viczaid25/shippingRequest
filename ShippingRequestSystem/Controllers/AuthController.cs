@@ -21,12 +21,12 @@ public class AuthController : Controller
     {
         if (string.IsNullOrWhiteSpace(username) ||
             string.IsNullOrWhiteSpace(password))
-            return Redirect($"/login?error=Credenciales+inválidas");
+            return Redirect($"/login?error={Uri.EscapeDataString("Credenciales inválidas")}");
 
         var user = await _ad.AuthenticateAsync(username.Trim(), password);
 
         if (user is null)
-            return Redirect("/login?error=Usuario+o+contraseña+incorrectos");
+            return Redirect($"/login?error={Uri.EscapeDataString("Usuario o contraseña incorrectos")}");
 
         // Construir claims
         var claims = new List<Claim>

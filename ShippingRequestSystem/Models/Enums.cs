@@ -14,7 +14,15 @@ public enum RequestStatus
     PendingTradeStaffQuotes,     // Staff sube IGI + cotizaciones
     PendingUserQuoteSelection,   // Usuario elige cotización
     PendingPremiumFreight,       // Usuario llena Premium Freight (si ≥$5000)
-    PendingTradeStaffApproval,   // Staff aprueba formalmente tras elegir cotización
+    // NOTA: el orden de declaración de aquí en adelante ya NO refleja el orden
+    // real del flujo (ver ApprovalService.BuildApprovalFlow) — no se reordenan
+    // los valores del enum porque ya hay solicitudes reales guardadas con estos
+    // números; el int subyacente de cada nombre no debe cambiar.
+    // Cadena formal real: User Manager → Sales Manager (si PF reembolsable por
+    // cliente) → Procurement Manager (si PF reembolsable por proveedor) →
+    // Finance Manager → President → Trade Staff (aprobación formal) →
+    // Trade Manager → Trade Coordinator.
+    PendingTradeStaffApproval,
     PendingTradeCoordinator,
     PendingTradeManager,
     PendingUserManager,
