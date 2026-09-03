@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using ShippingRequestSystem.Auth;
 using ShippingRequestSystem.Components;
 using ShippingRequestSystem.Data;
 using ShippingRequestSystem.Middleware;
@@ -21,19 +21,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sql => sql.EnableRetryOnFailure()));
 
 // ── Autenticación ─────────────────────────────────────────────────────────────
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/login";
-        options.LogoutPath = "/auth/logout";
-        options.AccessDeniedPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
-        options.Cookie.Name = "ShipRequest.Auth";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Strict;
-    });
+// Doble candado: el login de desarrollo solo existe si el entorno es
+// Development Y Auth:DevLogin es true (en IIS el entorno es Production, así
+// que el modo dev es imposible ahí aunque el flag se copie por error).
+var devLoginActivo = builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue<bool>("Auth:DevLogin");
 
+builder.Services.AddSingleton(new AuthMode(devLoginActivo));
+
+if (devLoginActivo)
+{
+    builder.Services.AddDevAuth();
+}
+else
+{
+    builder.Services.AddHubAuth(builder.Configuration);
+}
+
+// La autorización global NO se hace con una política de fallback sobre los
+// endpoints (RequireAuthorization() en MapRazorComponents también protegería
+// _framework/blazor.web.js y colgaría la app antes de poder autenticar) — se
+// hace con RequireAuthMiddleware más abajo, que respeta [AllowAnonymous].
 builder.Services.AddAuthorization();
 
 // ── MVC para AuthController ───────────────────────────────────────────────────
@@ -44,7 +52,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // ── Servicios de aplicación ───────────────────────────────────────────────────
-builder.Services.AddScoped<IAdService, AdService>();
 builder.Services.AddScoped<IApprovalService, ApprovalService>();
 builder.Services.AddScoped<IShippingRequestService, ShippingRequestService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
@@ -71,8 +78,16 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseAuthentication();
+
+if (!devLoginActivo)
+{
+    // Convierte el token SSO recibido por query (?meax_token=) en cookie de
+    // sesión local y limpia la URL.
+    app.UseHubSsoTokenBridge();
+}
+
 app.UseAuthorization();
-app.UseMiddleware<AuthMiddleware>();
+app.UseMiddleware<RequireAuthMiddleware>();
 app.UseAntiforgery();
 
 app.MapControllers();

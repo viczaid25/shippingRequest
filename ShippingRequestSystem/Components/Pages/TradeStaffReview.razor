@@ -110,6 +110,16 @@ else
                         @(_request.RequiresInternationalFreight ? "Internacional" : "")
                     </div>
                 </div>
+                <div class="mo-form-group" style="max-width:280px;">
+                    <label class="mo-form-label">Tipo de Operación</label>
+                    <div class="radio-group">
+                        @foreach (var op in Enum.GetValues<OperationType>())
+                        {
+                            <span class="radio-chip @(_operationType == op ? "selected" : "")"
+                                  @onclick="() => _operationType = op">@op</span>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -319,7 +329,7 @@ else
         }
 
         <div class="form-nav">
-            <a href="/requests/@Id" class="mo-btn mo-btn-secondary">← Volver al Detalle</a>
+            <a href="requests/@Id" class="mo-btn mo-btn-secondary">← Volver al Detalle</a>
             <button type="button" class="mo-btn mo-btn-success" @onclick="Submit"
                     disabled="@_submitting">
                 @if (_submitting)
@@ -347,6 +357,7 @@ else
     private string _errorMsg = string.Empty;
     private decimal _igi = 0;
     private string _incoterm = string.Empty;
+    private OperationType _operationType = OperationType.A1;
     private List<QuoteViewModel> _quotes = new();
 
     private bool _hasCoo = false;
@@ -369,6 +380,7 @@ else
 
             _igi = _request.IgiPercentage;
             _incoterm = _request.Incoterm ?? string.Empty;
+            _operationType = _request.OperationType;
             _hasCoo = _request.HasCOO;
             _cooSavedFilePath = _request.CooDocumentPath;
             _cooHasFile = !string.IsNullOrEmpty(_cooSavedFilePath);
@@ -421,32 +433,49 @@ else
         _quotes[idx].FileError = null;
     }
 
-    private void OnFileSelected(InputFileChangeEventArgs e, int idx)
+    // El PDF se lee y se guarda en disco en cuanto se selecciona, mientras el
+    // <InputFile> todavía existe en el DOM. Si se difiere la lectura hasta el
+    // botón "Guardar", para entonces la UI ya cambió al estado "archivo
+    // cargado" y removió ese <InputFile>, y el navegador pierde la referencia
+    // al archivo (error "_blazorFilesById" al llamar OpenReadStream).
+    private async Task OnFileSelected(InputFileChangeEventArgs e, int idx)
     {
         var file = e.File;
         _quotes[idx].FileError = null;
 
         if (file is null) return;
 
-        // Validar extensión
         if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
         {
             _quotes[idx].FileError = "Solo se permiten archivos PDF.";
             return;
         }
 
-        // Validar tamaño (10 MB)
-        if (file.Size > 10 * 1024 * 1024)
+        const long maxSize = 10 * 1024 * 1024;
+        if (file.Size > maxSize)
         {
             _quotes[idx].FileError = "El archivo excede el tamaño máximo de 10 MB.";
             return;
         }
 
-        _quotes[idx].File = file;
-        _quotes[idx].FileName = file.Name;
+        try
+        {
+            await using var stream = file.OpenReadStream(maxSize);
+            var saved = await FileService.SaveQuotePdfAsync(stream, file.Name, file.Size);
+            if (saved.HasValue)
+            {
+                _quotes[idx].SavedFilePath = saved.Value.filePath;
+                _quotes[idx].SavedFileName = saved.Value.fileName;
+                _quotes[idx].File = file;
+            }
+        }
+        catch (Exception ex)
+        {
+            _quotes[idx].FileError = $"Error al subir el PDF: {ex.Message}";
+        }
     }
 
-    private void OnCooFileSelected(InputFileChangeEventArgs e)
+    private async Task OnCooFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.File;
         _cooError = null;
@@ -458,14 +487,25 @@ else
             return;
         }
 
-        if (file.Size > 10 * 1024 * 1024)
+        const long maxSize = 10 * 1024 * 1024;
+        if (file.Size > maxSize)
         {
             _cooError = "El archivo excede el tamaño máximo de 10 MB.";
             return;
         }
 
-        _cooFile = file;
-        _cooHasFile = true;
+        try
+        {
+            await using var stream = file.OpenReadStream(maxSize);
+            var saved = await FileService.SaveCooDocumentAsync(stream, file.Name, file.Size);
+            _cooSavedFilePath = saved.filePath;
+            _cooFile = file;
+            _cooHasFile = true;
+        }
+        catch (Exception ex)
+        {
+            _cooError = $"Error al subir el documento: {ex.Message}";
+        }
     }
 
     private void ClearCooFile()
@@ -544,53 +584,21 @@ else
 
         try
         {
-            // Construir ShippingQuote guardando los PDFs
-            var quotesToSave = new List<ShippingQuote>();
-
-            foreach (var qVm in _quotes)
+            // Los PDFs (cotizaciones y COO) ya se guardaron en disco al
+            // seleccionarlos (ver OnFileSelected/OnCooFileSelected); aquí solo
+            // se persisten las rutas ya obtenidas.
+            var quotesToSave = _quotes.Select(qVm => new ShippingQuote
             {
-                string? filePath = qVm.SavedFilePath;
-                string? fileName = qVm.SavedFileName;
-
-                // Si hay un archivo nuevo, guardarlo
-                if (qVm.File is not null)
-                {
-                    const long maxSize = 10 * 1024 * 1024;
-                    await using var stream = qVm.File.OpenReadStream(maxSize);
-                    var saved = await FileService.SaveQuotePdfAsync(
-                        stream, qVm.File.Name, qVm.File.Size);
-
-                    if (saved.HasValue)
-                    {
-                        filePath = saved.Value.filePath;
-                        fileName = saved.Value.fileName;
-                    }
-                }
-
-                quotesToSave.Add(new ShippingQuote
-                {
-                    ProviderName = qVm.ProviderName,
-                    Amount = qVm.Amount,
-                    Notes = qVm.Notes,
-                    FilePath = filePath,
-                    FileName = fileName
-                });
-            }
-
-            // Subir documento COO si es nuevo
-            string? cooPath = _cooSavedFilePath;
-            if (_hasCoo && _cooFile is not null)
-            {
-                const long maxCooSize = 10 * 1024 * 1024;
-                await using var cooStream = _cooFile.OpenReadStream(maxCooSize);
-                var savedCoo = await FileService.SaveCooDocumentAsync(
-                    cooStream, _cooFile.Name, _cooFile.Size);
-                cooPath = savedCoo.filePath;
-            }
+                ProviderName = qVm.ProviderName,
+                Amount = qVm.Amount,
+                Notes = qVm.Notes,
+                FilePath = qVm.SavedFilePath,
+                FileName = qVm.SavedFileName
+            }).ToList();
 
             await QuoteService.SaveIgiAndQuotesAsync(
-                Id, _igi, _incoterm, _hasCoo, cooPath, quotesToSave);
-            Nav.NavigateTo($"/requests/{Id}");
+                Id, _igi, _incoterm, _operationType, _hasCoo, _cooSavedFilePath, quotesToSave);
+            Nav.NavigateTo($"requests/{Id}");
         }
         catch (Exception ex)
         {

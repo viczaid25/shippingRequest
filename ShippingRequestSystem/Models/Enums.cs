@@ -2,7 +2,7 @@
 
 public enum ShipmentDirection { Export, Import }
 public enum ShipmentScope { Nacional, Internacional }
-public enum NationalShipmentCategory { Compras, Adquisicion }
+public enum NationalShipmentCategory { Compras, Traslado }
 public enum ShippingWay { Maritimo, Terrestre, Aereo }
 public enum ServiceType { Urgente, Economico }
 public enum InvoiceType { Comercial, Traslado }
@@ -38,4 +38,6 @@ public enum PremiumFreightDirection { Import, Export, Local }
 public enum PremiumFreightScope { Nacional, America, Europa, Asia, Otro }
 public enum PremiumFreightTransport { AirFreight, LandFreight, SeaFreight, Charter, Otro }
 public enum PremiumFreightPayment { PaidByMeax, ReimbursableBySupplier, ReimbursableByClient }
-public enum ParcelCarrier { SHL, FedEx, UPS, DHL, Otro }
+// Valores explícitos para que SHL (nunca fue una paquetería real) se pueda
+// quitar sin desplazar los números ya guardados en BD para FedEx/UPS/DHL/Otro.
+public enum ParcelCarrier { FedEx = 1, UPS = 2, DHL = 3, Otro = 4 }

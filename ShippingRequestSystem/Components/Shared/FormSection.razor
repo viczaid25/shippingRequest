@@ -1,4 +1,4 @@
-﻿<div class="form-section">
+﻿<div class="form-section" style="@(AllowOverflow ? "overflow:visible;" : "")">
     <div class="form-section-header">
         <div>
             <h3 class="form-section-title">@Title</h3>
@@ -17,4 +17,9 @@
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // .form-section usa overflow:hidden para recortar esquinas redondeadas;
+    // los dropdowns internos (ej. buscador de Manager) necesitan escapar de
+    // ese recorte mientras están abiertos.
+    [Parameter] public bool AllowOverflow { get; set; } = false;
 }

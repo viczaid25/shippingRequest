@@ -1,7 +1,10 @@
 @page "/login"
 @layout EmptyLayout
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @using Microsoft.AspNetCore.WebUtilities
+@using ShippingRequestSystem.Auth
 @inject NavigationManager Nav
+@inject AuthMode AuthMode
 
 <PageTitle>Iniciar Sesión — Shipping Request System</PageTitle>
 
@@ -18,14 +21,22 @@
         </div>
 
         <!-- Card -->
-        <div style="background:#fff;border-radius:24px;padding:2rem;
+        <div style="background:#fff;border-radius:24px;overflow:hidden;
                     box-shadow:0 32px 64px rgba(0,0,0,0.3);">
+            @if (AuthMode.DevLoginActivo)
+            {
+                <div style="background:#b45309;color:#fff;font-weight:800;font-size:0.82rem;
+                            letter-spacing:0.5px;text-align:center;padding:0.55rem 1rem;">
+                    ⚠ MODO DESARROLLO — login sin Meax One
+                </div>
+            }
+            <div style="padding:2rem;">
 
             <h2 style="margin:0 0 0.25rem;font-size:1.2rem;font-weight:900;color:#0f172a;">
                 Iniciar Sesión
             </h2>
             <p style="margin:0 0 1.5rem;font-size:0.88rem;color:#64748b;">
-                Usa tus credenciales de red MEAX
+                Usuario (PcLoginId) + contraseña de desarrollo
             </p>
 
             @if (!string.IsNullOrEmpty(_errorMsg))
@@ -36,19 +47,19 @@
             }
 
             <!-- Form que hace POST al AuthController -->
-            <form method="post" action="/auth/login">
+            <form method="post" action="auth/login">
                 <input type="hidden" name="returnUrl" value="@_returnUrl" />
 
                 <div class="mo-form-group" style="margin-bottom:1rem;">
-                    <label class="mo-form-label">Usuario</label>
+                    <label class="mo-form-label">Usuario (PcLoginId)</label>
                     <input type="text" name="username" class="mo-form-control"
-                           placeholder="usuario.nombre"
+                           placeholder="Ej: DM45207"
                            autocomplete="username"
                            style="width:100%;box-sizing:border-box;" />
                 </div>
 
                 <div class="mo-form-group" style="margin-bottom:1.5rem;">
-                    <label class="mo-form-label">Contraseña</label>
+                    <label class="mo-form-label">Contraseña de desarrollo</label>
                     <input type="password" name="password" class="mo-form-control"
                            placeholder="••••••••"
                            autocomplete="current-password"
@@ -62,7 +73,8 @@
 
             <div style="margin-top:1.25rem;text-align:center;
                         font-size:0.8rem;color:#94a3b8;">
-                Dominio: <strong>MEAX</strong> · Soporte: IT Help Desk
+                Solo disponible en modo desarrollo (config <code>Auth:DevPassword</code>)
+            </div>
             </div>
         </div>
     </div>
@@ -74,6 +86,15 @@
 
     protected override void OnInitialized()
     {
+        if (!AuthMode.DevLoginActivo)
+        {
+            // En producción el login lo hace el hub; ir a inicio dispara el SSO.
+            // Ruta vacía (no "/") para respetar el PathBase si la app corre
+            // como sub-aplicación de IIS.
+            Nav.NavigateTo("", forceLoad: true);
+            return;
+        }
+
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
 

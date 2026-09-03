@@ -8,6 +8,12 @@ public interface IPermissionService
     Task<List<MeaxUser>> SearchUsersAsync(string query);
     Task<MeaxUser?> GetUserByLoginAsync(string loginId);
 
+    // Lista navegable de usuarios: sin texto (o menos de 2 caracteres) devuelve
+    // los primeros "take" usuarios por nombre; con texto filtra igual que
+    // SearchUsersAsync. Pensado para selectores tipo "lista desplegable con
+    // buscador" (ej. Manager/Supervisor en Nueva Solicitud).
+    Task<List<MeaxUser>> ListUsersAsync(string? query, int take = 30, string[]? positions = null);
+
     // Permisos por rol
     Task<List<ApprovalRolePermission>> GetPermissionsByRoleAsync(string roleName);
     Task<List<ApprovalRolePermission>> GetAllPermissionsAsync();

@@ -207,10 +207,6 @@ public class ShippingRequestService : IShippingRequestService
                         Quantity = itemVm.Quantity,
                         UOM = itemVm.UOM,
                         NetWeight = itemVm.NetWeight,
-                        GrossWeight = itemVm.GrossWeight,
-                        Length = itemVm.Length,
-                        Width = itemVm.Width,
-                        Height = itemVm.Height,
                         UnitPrice = itemVm.UnitPrice,
                         Amount = itemVm.Amount
                     });

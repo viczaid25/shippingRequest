@@ -21,7 +21,8 @@ public class ShippingPackage
     [MaxLength(100)]
     public string? Label { get; set; }
 
-    // Peso y dimensiones del pallet completo (armado), solo relevante si es Pallet
+    // Peso bruto y dimensiones de este contenedor completo (caja o pallet armado).
+    // Se captura una sola vez por caja/pallet, no por item, para no repetirlo por partida.
     [Column(TypeName = "decimal(18,4)")]
     public decimal GrossWeight { get; set; }
     [Column(TypeName = "decimal(18,4)")]

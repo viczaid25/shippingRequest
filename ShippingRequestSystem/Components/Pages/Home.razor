@@ -70,17 +70,17 @@
                     </div>
                 </div>
                 <div class="quick-actions">
-                    <a href="/requests/new" class="quick-card primary">
+                    <a href="requests/new" class="quick-card primary">
                         <span>Nueva</span>
                         <strong>Crear Solicitud de Envío</strong>
                         <p>Captura una nueva solicitud con todos los detalles del envío</p>
                     </a>
-                    <a href="/approvals" class="quick-card">
+                    <a href="approvals" class="quick-card">
                         <span>Pendiente</span>
                         <strong>Revisar Aprobaciones</strong>
                         <p>Consulta las solicitudes en espera de tu firma</p>
                     </a>
-                    <a href="/requests" class="quick-card">
+                    <a href="requests" class="quick-card">
                         <span>Historial</span>
                         <strong>Mis Solicitudes</strong>
                         <p>Consulta el estado de todas tus solicitudes</p>
@@ -95,7 +95,7 @@
                         <h2>Solicitudes Recientes</h2>
                         <p class="panel-subtitle">Últimas 5 registradas</p>
                     </div>
-                    <a href="/requests" class="panel-link">Ver todas →</a>
+                    <a href="requests" class="panel-link">Ver todas →</a>
                 </div>
                 <div class="recent-list">
                     @if (!_recent.Any())
@@ -108,7 +108,7 @@
                     {
                         @foreach (var r in _recent)
                         {
-                            <a href="/requests/@r.Id" class="recent-item">
+                            <a href="requests/@r.Id" class="recent-item">
                                 <div>
                                     <strong>#@r.Id — @r.RecipientBusinessName</strong>
                                     <span>@r.Department · @r.BusinessUnit</span>

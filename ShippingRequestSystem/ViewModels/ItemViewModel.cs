@@ -9,10 +9,6 @@ public class ItemViewModel
     public int Quantity { get; set; } = 1;
     public string? UOM { get; set; }
     public decimal NetWeight { get; set; }
-    public decimal GrossWeight { get; set; }
-    public decimal Length { get; set; }
-    public decimal Width { get; set; }
-    public decimal Height { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal Amount => Quantity * UnitPrice;
 }

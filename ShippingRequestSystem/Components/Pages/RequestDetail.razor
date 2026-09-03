@@ -79,7 +79,7 @@ else
                     el usuario pueda elegir.
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/staff-review" class="mo-btn mo-btn-success"
+                    <a href="requests/@_request.Id/staff-review" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;">
                         Ingresar IGI y Cotizaciones
@@ -99,7 +99,7 @@ else
                     Elige la más conveniente para tu envío.
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/select-quote" class="mo-btn mo-btn-success"
+                    <a href="requests/@_request.Id/select-quote" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;">
                         Ver y Elegir Cotización
@@ -132,7 +132,7 @@ else
                     }
                 </div>
                 <div class="approval-btns">
-                    <a href="/requests/@_request.Id/premium-freight" class="mo-btn mo-btn-success"
+                    <a href="requests/@_request.Id/premium-freight" class="mo-btn mo-btn-success"
                        style="text-decoration:none;display:inline-flex;
                                       align-items:center;gap:0.5rem;
                                       background:linear-gradient(135deg,#f59e0b,#d97706);">
@@ -299,7 +299,7 @@ else
                         <div class="info-row">
                             <span class="info-row-label">Documento COO</span>
                             <span class="info-row-value">
-                                <a href="@_request.CooDocumentPath" target="_blank"
+                                <a href="@_request.CooDocumentPath?.TrimStart('/')" target="_blank"
                                    style="font-weight:700;color:#1d4ed8;">Ver documento</a>
                             </span>
                         </div>
@@ -396,7 +396,7 @@ else
                                 }
                                 @if (!string.IsNullOrEmpty(q.FilePath))
                                 {
-                                    <a href="@q.FilePath" target="_blank"
+                                    <a href="@q.FilePath?.TrimStart('/')" target="_blank"
                                        style="display:inline-flex;align-items:center;
                                                               gap:0.35rem;padding:0.35rem 0.75rem;
                                                               border-radius:8px;background:#fef2f2;
@@ -516,8 +516,9 @@ else
                     {
                         @if (!string.IsNullOrEmpty(path))
                         {
-                            <a href="@path" target="_blank" style="text-decoration:none;">
-                                <img src="@path" alt="@label"
+                            var relPath = path!.TrimStart('/');
+                            <a href="@relPath" target="_blank" style="text-decoration:none;">
+                                <img src="@relPath" alt="@label"
                                      style="width:100%;height:110px;object-fit:cover;
                                             border-radius:12px;border:1px solid #e2e8f0;" />
                                 <div style="font-size:0.78rem;color:#64748b;font-weight:700;

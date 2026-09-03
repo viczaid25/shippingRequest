@@ -44,7 +44,8 @@
 @if (_step == 0)
 {
     <FormSection Title="Datos del Solicitante"
-                 Subtitle="Información de quien realiza la solicitud">
+                 Subtitle="Información de quien realiza la solicitud"
+                 AllowOverflow="_managerDropdownOpen">
         <FieldRow>
             <div class="mo-form-group">
                 <label class="mo-form-label">Nombre <span class="required">*</span></label>
@@ -98,30 +99,83 @@
                                                          ? DateTime.Now
                                                          : DateTime.Parse(e.Value.ToString()!)" />
         </div>
-        <div class="mo-form-group">
+        <div class="mo-form-group"
+             style="position:relative;@(_managerDropdownOpen ? "z-index:45;" : "")">
             <label class="mo-form-label">Manager / Supervisor <span class="required">*</span></label>
-            <input type="text" class="mo-form-control @(HasError("UserManagerName") ? "invalid" : "")"
-                   placeholder="Nombre del manager"
-                   @bind="_vm.UserManagerName" @bind:event="oninput" />
-            @if (HasError("UserManagerName"))
+            @if (!string.IsNullOrEmpty(_vm.UserManagerEmail))
+            {
+                <div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0.85rem;
+                            background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;color:#0f172a;font-size:0.88rem;">
+                            @_vm.UserManagerName
+                        </div>
+                        <div style="font-size:0.76rem;color:#64748b;overflow:hidden;
+                                    text-overflow:ellipsis;white-space:nowrap;">
+                            @_vm.UserManagerEmail
+                        </div>
+                    </div>
+                    <button type="button" class="mo-btn mo-btn-secondary-outline mo-btn-sm"
+                            @onclick="ClearManagerSelection">
+                        Cambiar
+                    </button>
+                </div>
+            }
+            else
+            {
+                <input type="text" class="mo-form-control @(HasError("UserManagerName") ? "invalid" : "")"
+                       placeholder="Haz clic para elegir de la lista o escribe para buscar..."
+                       value="@_managerSearchQuery"
+                       @onfocus="OpenManagerDropdown"
+                       @oninput="OnManagerSearchInput" />
+                @if (_managerDropdownOpen)
                 {
-                    <span class="mo-form-error">El nombre del manager es requerido</span>
+                    <div style="position:absolute;left:0;right:0;top:100%;margin-top:0.3rem;
+                                max-height:240px;overflow-y:auto;border:1px solid #e2e8f0;
+                                border-radius:12px;background:#fff;
+                                box-shadow:0 8px 24px rgba(15,23,42,0.12);">
+                        @if (_managerSearching)
+                        {
+                            <div style="padding:0.75rem;text-align:center;color:#64748b;font-size:0.82rem;">
+                                Buscando...
+                            </div>
+                        }
+                        else if (_managerSearchResults.Any())
+                        {
+                            @foreach (var u in _managerSearchResults)
+                            {
+                                <div style="display:flex;flex-direction:column;padding:0.55rem 0.85rem;
+                                            cursor:pointer;border-bottom:1px solid #f1f5f9;"
+                                     @onclick="() => SelectManager(u)">
+                                    <span style="font-weight:700;color:#0f172a;font-size:0.85rem;">
+                                        @(u.Username ?? u.PcLoginId)
+                                    </span>
+                                    <span style="font-size:0.75rem;color:#64748b;">
+                                        @u.Email
+                                        @if (!string.IsNullOrEmpty(u.Department))
+                                        {
+                                            <span> · @u.Department</span>
+                                        }
+                                    </span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div style="padding:0.75rem;text-align:center;color:#94a3b8;font-size:0.82rem;">
+                                Sin resultados@(_managerSearchQuery.Length >= 2 ? $" para \"{_managerSearchQuery}\"" : "")
+                            </div>
+                        }
+                    </div>
+                    <div style="position:fixed;inset:0;z-index:-1;" @onclick="CloseManagerDropdown"></div>
                 }
-            </div>
-        </FieldRow>
-        <FieldRow>
-            <div class="mo-form-group">
-                <label class="mo-form-label">Email del Manager <span class="required">*</span></label>
-                <input type="email" class="mo-form-control @(HasError("UserManagerEmail") ? "invalid" : "")"
-                       placeholder="manager@empresa.com"
-                       @bind="_vm.UserManagerEmail" @bind:event="oninput" />
-                @if (HasError("UserManagerEmail"))
+                @if (HasError("UserManagerName"))
                 {
-                    <span class="mo-form-error">El email del manager es requerido</span>
+                    <span class="mo-form-error">Debes seleccionar un manager de la lista</span>
                 }
-            </div>
-            <div></div>
-        </FieldRow>
+            }
+        </div>
+    </FieldRow>
     </FormSection>
 
     <FormSection Title="Tipo de Envío">
@@ -151,7 +205,7 @@
                     </div>
                     @if (HasError("NationalCategory"))
                     {
-                        <span class="mo-form-error">Selecciona Compras o Adquisición</span>
+                        <span class="mo-form-error">Selecciona Compras o Traslado</span>
                     }
                 }
                 else
@@ -283,11 +337,16 @@
     <FieldRow>
         <div class="mo-form-group">
             <label class="mo-form-label">Fecha de Entrega</label>
-            <input type="date" class="mo-form-control"
+            <input type="date" class="mo-form-control @(HasError("DeliveryDate") ? "invalid" : "")"
                    value="@_vm.DeliveryDate?.ToString("yyyy-MM-dd")"
+                   min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")"
                    @onchange="e => _vm.DeliveryDate = string.IsNullOrEmpty(e.Value?.ToString())
                                                          ? null
                                                          : DateTime.Parse(e.Value.ToString()!)" />
+            @if (HasError("DeliveryDate"))
+            {
+                <span class="mo-form-error">La fecha de entrega debe ser posterior a hoy</span>
+            }
         </div>
         <div></div>
     </FieldRow>
@@ -317,17 +376,11 @@
                     }
                 </div>
             </div>
-            <div class="mo-form-group">
-                <label class="mo-form-label">Tipo de Operación</label>
-                <div class="radio-group">
-                    @foreach (var op in Enum.GetValues<OperationType>())
-                    {
-                        <span class="radio-chip @(_vm.OperationType == op ? "selected" : "")"
-                              @onclick="() => _vm.OperationType = op">@op</span>
-                    }
-                </div>
-            </div>
+            <div></div>
         </FieldRow>
+        <div style="font-size:0.78rem;color:#64748b;margin-top:-0.4rem;">
+            El Tipo de Operación lo determina Trade Staff durante su revisión.
+        </div>
         <FieldRow Full="true">
             <div class="mo-form-group">
                 <label class="mo-form-label">
@@ -422,10 +475,16 @@
             @if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver)
             {
                 <div class="mo-form-group">
-                    <label class="mo-form-label">Parcel Account</label>
-                    <input type="text" class="mo-form-control"
+                    <label class="mo-form-label">
+                        Parcel Account <span class="required">*</span>
+                    </label>
+                    <input type="text" class="mo-form-control @(HasError("ParcelAccount") ? "invalid" : "")"
                            placeholder="Número de cuenta del receptor"
                            @bind="_vm.ParcelAccount" @bind:event="oninput" />
+                    @if (HasError("ParcelAccount"))
+                    {
+                        <span class="mo-form-error">El Parcel Account es requerido</span>
+                    }
                 </div>
             }
         </FieldRow>
@@ -469,6 +528,15 @@
                     <label class="mo-form-label">
                         @slot.Label <span class="required">*</span>
                     </label>
+                    @if (slot.Key == "final")
+                    {
+                        <div style="font-size:0.76rem;color:#854d0e;background:#fefce8;
+                                    border:1px solid #fde047;border-radius:10px;
+                                    padding:0.5rem 0.7rem;margin-bottom:0.5rem;">
+                            Si el paquete lleva etiqueta, fotografíala y adjúntala también
+                            como evidencia.
+                        </div>
+                    }
                     @if (slot.File is not null || !string.IsNullOrEmpty(slot.GetPath()))
                     {
                         <div style="display:flex;align-items:center;gap:0.75rem;
@@ -623,6 +691,13 @@
     private bool _showWeightModal = false;
     private string _weightModalMessage = string.Empty;
 
+    private string _managerSearchQuery = string.Empty;
+    private bool _managerSearching = false;
+    private bool _managerDropdownOpen = false;
+    private bool _managerResultsLoaded = false;
+    private List<MeaxUser> _managerSearchResults = new();
+    private CancellationTokenSource? _managerSearchCts;
+
     private HashSet<string> _errors = new();
     private List<EvidenceSlot> _evidenceSlots = new();
 
@@ -718,10 +793,6 @@
                 Quantity = i.Quantity,
                 UOM = i.UOM,
                 NetWeight = i.NetWeight,
-                GrossWeight = i.GrossWeight,
-                Length = i.Length,
-                Width = i.Width,
-                Height = i.Height,
                 UnitPrice = i.UnitPrice
             }).ToList()
         }).ToList();
@@ -773,6 +844,73 @@
 
     private bool HasError(string field) => _errors.Contains(field);
 
+    private async Task OpenManagerDropdown()
+    {
+        _managerDropdownOpen = true;
+        if (!_managerResultsLoaded)
+            await LoadManagerResultsAsync(_managerSearchQuery);
+    }
+
+    private void CloseManagerDropdown() => _managerDropdownOpen = false;
+
+    // Solo estos puestos (columna [position] en meax_all_user) pueden elegirse
+    // como Manager/Supervisor.
+    private static readonly string[] ManagerPositions = { "DGM", "MGR", "AMGR" };
+
+    private async Task OnManagerSearchInput(ChangeEventArgs e)
+    {
+        _managerSearchQuery = e.Value?.ToString() ?? string.Empty;
+        _managerDropdownOpen = true;
+
+        _managerSearchCts?.Cancel();
+        _managerSearchCts = new CancellationTokenSource();
+        var token = _managerSearchCts.Token;
+
+        _managerSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(300, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await LoadManagerResultsAsync(_managerSearchQuery);
+    }
+
+    private async Task LoadManagerResultsAsync(string query)
+    {
+        _managerSearching = true;
+        StateHasChanged();
+
+        _managerSearchResults = await PermissionService.ListUsersAsync(query, 30, ManagerPositions);
+        _managerResultsLoaded = true;
+        _managerSearching = false;
+        StateHasChanged();
+    }
+
+    private void SelectManager(MeaxUser u)
+    {
+        _vm.UserManagerName = u.Username ?? u.PcLoginId ?? string.Empty;
+        _vm.UserManagerEmail = u.Email ?? string.Empty;
+        _managerSearchQuery = string.Empty;
+        _managerSearchResults = new();
+        _managerResultsLoaded = false;
+        _managerDropdownOpen = false;
+    }
+
+    private void ClearManagerSelection()
+    {
+        _vm.UserManagerName = string.Empty;
+        _vm.UserManagerEmail = string.Empty;
+        _managerSearchQuery = string.Empty;
+        _managerResultsLoaded = false;
+        _managerSearchResults = new();
+    }
+
     private void OnFolioInput(ChangeEventArgs e)
     {
         _vm.MaterialBajaFolio = e.Value?.ToString();
@@ -820,23 +958,31 @@
         slot.Error = null;
     }
 
-    private static IEnumerable<ItemViewModel> FlattenItems(List<PackageViewModel> packages)
+    // El peso bruto y las dimensiones se capturan una sola vez por caja o pallet
+    // (no por item), así que la validación compara la suma del peso neto de los
+    // items dentro de cada contenedor contra el peso bruto declarado de ese
+    // mismo contenedor.
+    private static PackageViewModel? FindContainerWithInvalidWeight(List<PackageViewModel> packages)
     {
         foreach (var pkg in packages)
         {
-            foreach (var item in pkg.Items) yield return item;
-            foreach (var item in FlattenItems(pkg.ChildBoxes)) yield return item;
+            if (pkg.GrossWeight > 0 && pkg.Items.Sum(i => i.NetWeight) >= pkg.GrossWeight)
+                return pkg;
+
+            var invalidChild = FindContainerWithInvalidWeight(pkg.ChildBoxes);
+            if (invalidChild is not null) return invalidChild;
         }
+        return null;
     }
 
     private bool ValidateWeights()
     {
-        bool invalid = FlattenItems(_vm.Packages)
-            .Any(i => i.GrossWeight > 0 && i.NetWeight >= i.GrossWeight);
-
-        if (invalid)
+        var invalidContainer = FindContainerWithInvalidWeight(_vm.Packages);
+        if (invalidContainer is not null)
         {
-            _weightModalMessage = "El peso neto material sin empaque y peso bruto material con empaque";
+            _weightModalMessage = "El peso neto (suma de los items) debe ser menor al peso bruto " +
+                $"declarado para {(invalidContainer.PackageType == PackageType.Pallet ? "el pallet" : "la caja")}" +
+                (string.IsNullOrEmpty(invalidContainer.Label) ? "." : $" \"{invalidContainer.Label}\".");
             _showWeightModal = true;
             return false;
         }
@@ -880,6 +1026,11 @@
                     !_vm.RequiresLocalDestinationFreight &&
                     !_vm.RequiresInternationalFreight)
                     _errors.Add("Freight");
+                if (_vm.DeliveryDate.HasValue && _vm.DeliveryDate.Value.Date <= DateTime.Now.Date)
+                    _errors.Add("DeliveryDate");
+                if (_vm.PaymentResponsibility == PaymentResponsibility.Receiver &&
+                    string.IsNullOrWhiteSpace(_vm.ParcelAccount))
+                    _errors.Add("ParcelAccount");
                 _showStackableError = !_stackableSelected;
                 break;
 
@@ -958,7 +1109,7 @@
         try
         {
             var request = await RequestService.CreateAsync(_vm, _draftId);
-            Nav.NavigateTo($"/requests/{request.Id}");
+            Nav.NavigateTo($"requests/{request.Id}");
         }
         catch (Exception ex)
         {

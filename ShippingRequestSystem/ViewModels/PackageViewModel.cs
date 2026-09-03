@@ -8,7 +8,8 @@ public class PackageViewModel
     public PackageType PackageType { get; set; } = PackageType.Box;
     public string Label { get; set; } = string.Empty;
 
-    // Peso y dimensiones del pallet completo (armado), solo relevante si es Pallet
+    // Peso bruto y dimensiones de este contenedor completo (caja o pallet armado).
+    // Se captura una sola vez por caja/pallet, no por item, para no repetirlo por partida.
     public decimal GrossWeight { get; set; }
     public decimal Length { get; set; }
     public decimal Width { get; set; }

@@ -31,6 +31,26 @@ public class PermissionService : IPermissionService
             .ToListAsync();
     }
 
+    public async Task<List<MeaxUser>> ListUsersAsync(string? query, int take = 30, string[]? positions = null)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var q = db.MeaxUsers.AsQueryable();
+
+        if (positions is { Length: > 0 })
+            q = q.Where(u => u.Position != null && positions.Contains(u.Position));
+
+        var term = query?.Trim().ToLower();
+        if (!string.IsNullOrEmpty(term) && term.Length >= 2)
+        {
+            q = q.Where(u =>
+                (u.Username != null && u.Username.ToLower().Contains(term)) ||
+                (u.Email != null && u.Email.ToLower().Contains(term)) ||
+                (u.PcLoginId != null && u.PcLoginId.ToLower().Contains(term)));
+        }
+
+        return await q.OrderBy(u => u.Username).Take(take).ToListAsync();
+    }
+
     public async Task<MeaxUser?> GetUserByLoginAsync(string loginId)
     {
         if (string.IsNullOrWhiteSpace(loginId)) return null;

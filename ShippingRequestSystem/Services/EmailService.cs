@@ -95,19 +95,27 @@ public class EmailService : IEmailService
         }
         sb.Append("</table>");
 
-        sb.Append("<h3>Items</h3><table border='1' cellpadding='6' cellspacing='0'>");
-        sb.Append("<tr><th>No. Parte</th><th>Descripción</th><th>Cant.</th>" +
-                  "<th>Peso Neto</th><th>Peso Bruto</th><th>Monto</th></tr>");
+        sb.Append("<h3>Paquetes e Items</h3>");
         foreach (var pkg in request.Packages)
         {
+            if (!pkg.Items.Any()) continue;
+
+            var pkgLabel = (pkg.PackageType == PackageType.Pallet ? "Pallet" : "Caja") +
+                           (string.IsNullOrEmpty(pkg.Label) ? "" : $" — {pkg.Label}");
+            sb.Append($"<p><strong>{pkgLabel}</strong> · Peso Bruto: {pkg.GrossWeight} kg · " +
+                      $"{pkg.Length} × {pkg.Width} × {pkg.Height} cm</p>");
+
+            sb.Append("<table border='1' cellpadding='6' cellspacing='0'>");
+            sb.Append("<tr><th>No. Parte</th><th>Descripción</th><th>Cant.</th>" +
+                      "<th>Peso Neto</th><th>Monto</th></tr>");
             foreach (var item in pkg.Items)
             {
                 sb.Append($"<tr><td>{item.PartNumber}</td><td>{item.Description}</td>" +
                           $"<td>{item.Quantity}</td><td>{item.NetWeight}</td>" +
-                          $"<td>{item.GrossWeight}</td><td>${item.Amount:N2}</td></tr>");
+                          $"<td>${item.Amount:N2}</td></tr>");
             }
+            sb.Append("</table>");
         }
-        sb.Append("</table>");
 
         return sb.ToString();
     }

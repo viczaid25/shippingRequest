@@ -16,6 +16,14 @@
         </span>
     </div>
 
+    @if (Package.GrossWeight > 0 || Package.Length > 0 || Package.Width > 0 || Package.Height > 0)
+    {
+        <div style="padding:0.5rem 1rem 0;font-size:0.8rem;color:#64748b;">
+            Peso Bruto: <strong>@Package.GrossWeight.ToString("N2") kg</strong>
+            · Dimensiones: <strong>@Package.Length × @Package.Width × @Package.Height cm</strong>
+        </div>
+    }
+
     @if (Package.Items.Any())
     {
         <div style="padding:0.75rem 1rem;overflow-x:auto;">
@@ -28,8 +36,6 @@
                         <th>Cant.</th>
                         <th>UOM</th>
                         <th>Peso Neto</th>
-                        <th>Peso Bruto</th>
-                        <th>L × W × H</th>
                         <th>Unit Price</th>
                         <th>Amount</th>
                     </tr>
@@ -44,10 +50,6 @@
                             <td style="text-align:center;">@item.Quantity</td>
                             <td>@item.UOM</td>
                             <td>@item.NetWeight.ToString("N2")</td>
-                            <td>@item.GrossWeight.ToString("N2")</td>
-                            <td style="white-space:nowrap;font-size:0.78rem;color:#64748b;">
-                                @item.Length × @item.Width × @item.Height cm
-                            </td>
                             <td>$@item.UnitPrice.ToString("N2")</td>
                             <td style="font-weight:800;">$@item.Amount.ToString("N2")</td>
                         </tr>

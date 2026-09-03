@@ -18,6 +18,7 @@ public class QuoteService : IQuoteService
     }
 
     public async Task SaveIgiAndQuotesAsync(int requestId, decimal igi, string? incoterm,
+                                            OperationType operationType,
                                             bool hasCoo, string? cooDocumentPath,
                                             List<ShippingQuote> quotes)
     {
@@ -29,6 +30,7 @@ public class QuoteService : IQuoteService
 
         request.IgiPercentage = igi;
         request.Incoterm = incoterm;
+        request.OperationType = operationType;
         request.HasCOO = hasCoo;
         request.CooDocumentPath = hasCoo ? cooDocumentPath : null;
         request.UpdatedAt = DateTime.UtcNow;

@@ -205,7 +205,7 @@ else
         }
 
         <div class="form-nav">
-            <a href="/requests/@Id/select-quote" class="mo-btn mo-btn-secondary">← Cambiar Cotización</a>
+            <a href="requests/@Id/select-quote" class="mo-btn mo-btn-secondary">← Cambiar Cotización</a>
             <button type="button" class="mo-btn mo-btn-success" @onclick="Submit"
                     disabled="@_submitting">
                 @if (_submitting)
@@ -274,7 +274,7 @@ else
         try
         {
             await QuoteService.SavePremiumFreightAsync(Id, _pf);
-            Nav.NavigateTo($"/requests/{Id}");
+            Nav.NavigateTo($"requests/{Id}");
         }
         catch (Exception ex)
         {

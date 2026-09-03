@@ -324,15 +324,6 @@ namespace ShippingRequestSystem.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal>("GrossWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Height")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Length")
-                        .HasColumnType("decimal(18,4)");
-
                     b.Property<decimal>("NetWeight")
                         .HasColumnType("decimal(18,4)");
 
@@ -353,9 +344,6 @@ namespace ShippingRequestSystem.Migrations
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Width")
-                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 

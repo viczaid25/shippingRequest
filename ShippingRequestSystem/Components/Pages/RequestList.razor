@@ -15,7 +15,7 @@
                 <h2>Solicitudes de Envío</h2>
                 <p class="panel-subtitle">Todas las solicitudes registradas en el sistema</p>
             </div>
-            <a href="/requests/new" class="mo-btn mo-btn-primary mo-btn-sm">+ Nueva</a>
+            <a href="requests/new" class="mo-btn mo-btn-primary mo-btn-sm">+ Nueva</a>
         </div>
 
         @if (_loading)
@@ -41,7 +41,7 @@
                     bool isOwnDraft = r.Status == RequestStatus.Draft &&
                                        string.Equals(r.RequestorEmail, CurrentUser.Email,
                                                      StringComparison.OrdinalIgnoreCase);
-                    string href = isOwnDraft ? "/requests/new" : $"/requests/{r.Id}";
+                    string href = isOwnDraft ? "requests/new" : $"requests/{r.Id}";
                     <a href="@href" class="recent-item">
                         <div style="display:flex;align-items:center;gap:0.75rem;">
                             <div style="width:40px;height:40px;border-radius:12px;background:#eff6ff;

@@ -137,10 +137,44 @@ public class ApprovalService : IApprovalService
                         r.Status == RequestStatus.PendingPresident)
             .ToListAsync();
 
-        // Por solicitud, el "paso pendiente" real es el de menor StepOrder que
-        // todavía no se completa — sin importar cuántos otros roles futuros
-        // tenga asignados el mismo aprobador para esa misma solicitud.
-        var pending = requests
+        var pending = new List<ApprovalStep>();
+
+        // PendingTradeStaffQuotes ocurre ANTES de la cadena formal de
+        // ApprovalStep (que arranca hasta que el usuario elige cotización) —
+        // no hay ningún ApprovalStep todavía para "subir cotizaciones", así
+        // que ese caso se resuelve aparte, por quién tiene el rol Trade Staff
+        // asignado en /admin/permissions.
+        var tradeStaffQuotesRequests = requests
+            .Where(r => r.Status == RequestStatus.PendingTradeStaffQuotes)
+            .ToList();
+
+        if (tradeStaffQuotesRequests.Count > 0)
+        {
+            bool isTradeStaff = await db.ApprovalRolePermissions.AnyAsync(p =>
+                p.IsActive && p.RoleName == "Trade Staff" &&
+                p.UserEmail.ToLower() == approverEmail.ToLower());
+
+            if (isTradeStaff)
+            {
+                pending.AddRange(tradeStaffQuotesRequests.Select(r => new ApprovalStep
+                {
+                    ShippingRequestId = r.Id,
+                    ShippingRequest = r,
+                    RoleName = "Trade Staff",
+                    ApproverEmail = approverEmail,
+                    IsRequired = true
+                }));
+            }
+        }
+
+        // Para el resto (ya dentro de la cadena formal), el "paso pendiente"
+        // real es el de menor StepOrder que todavía no se completa — sin
+        // importar cuántos otros roles futuros tenga asignados el mismo
+        // aprobador para esa misma solicitud.
+        var chainRequests = requests
+            .Where(r => r.Status != RequestStatus.PendingTradeStaffQuotes);
+
+        pending.AddRange(chainRequests
             .Select(r => r.ApprovalSteps
                 .Where(s => s.IsRequired && !s.IsCompleted)
                 .OrderBy(s => s.StepOrder)
@@ -148,10 +182,8 @@ public class ApprovalService : IApprovalService
             .Where(s => s is not null &&
                         string.Equals(s.ApproverEmail, approverEmail,
                                       StringComparison.OrdinalIgnoreCase))
-            .Select(s => s!)
-            .OrderBy(s => s.ShippingRequest.CreatedAt)
-            .ToList();
+            .Select(s => s!));
 
-        return pending;
+        return pending.OrderBy(s => s.ShippingRequest.CreatedAt).ToList();
     }
 }

@@ -29,18 +29,6 @@ public class ShippingItem
     [Column(TypeName = "decimal(18,4)")]
     public decimal NetWeight { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal GrossWeight { get; set; }
-
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal Length { get; set; }
-
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal Width { get; set; }
-
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal Height { get; set; }
-
     [Column(TypeName = "decimal(18,2)")]
     public decimal UnitPrice { get; set; }
 

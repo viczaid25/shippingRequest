@@ -73,7 +73,7 @@
                 @foreach (var step in _steps)
                 {
                     var req = step.ShippingRequest;
-                    <a href="/requests/@req.Id" class="approval-card">
+                    <a href="requests/@req.Id" class="approval-card">
                         <div class="approval-card-main">
                             <div class="approval-card-title">
                                 #@req.Id — @req.RecipientBusinessName
