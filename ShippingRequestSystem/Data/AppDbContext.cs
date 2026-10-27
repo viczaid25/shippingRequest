@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<SystemAdmin> SystemAdmins => Set<SystemAdmin>();
     public DbSet<FolioCounter> FolioCounters => Set<FolioCounter>();
     public DbSet<PartCatalog> PartCatalogs => Set<PartCatalog>();
+    public DbSet<CustomerCatalog> CustomerCatalogs => Set<CustomerCatalog>();
 
     // Tabla existente — solo lectura desde EF
     public DbSet<MeaxUser> MeaxUsers => Set<MeaxUser>();

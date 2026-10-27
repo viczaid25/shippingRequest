@@ -49,7 +49,6 @@ public class ShippingRequestViewModel
     public string ShipmentPurpose { get; set; } = string.Empty;
 
     public InvoiceType InvoiceType { get; set; } = InvoiceType.Comercial;
-    public OperationType OperationType { get; set; } = OperationType.A1;
 
     // El solicitante ya no elige el Incoterm: marca el checklist de tramos de
     // flete aplicables y Trade Staff determina el Incoterm en su revisión.

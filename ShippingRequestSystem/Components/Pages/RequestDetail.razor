@@ -4,6 +4,7 @@
 @using ShippingRequestSystem.Helpers
 @inject IShippingRequestService RequestService
 @inject IApprovalService ApprovalService
+@inject IPermissionService PermissionService
 @inject IEmailService EmailService
 @inject NavigationManager Nav
 @inject CurrentUserService CurrentUser
@@ -69,13 +70,12 @@ else
 
         <!-- ── Acciones contextuales ─────────────────────────────────────────── -->
         <!-- 1. Trade Staff sube IGI + cotizaciones -->
-        @if (_request.Status == RequestStatus.PendingTradeStaffQuotes &&
-            _pendingStep?.RoleName == "Trade Staff")
+        @if (_request.Status == RequestStatus.PendingTradeStaffQuotes && _isTradeStaff)
         {
             <div class="approval-action-card">
                 <div class="approval-action-title">Acción Requerida — Trade Staff</div>
                 <div class="approval-action-sub">
-                    Ingresa el % IGI y sube mínimo 3 cotizaciones con PDF para que
+                    Ingresa el % IGI y sube al menos 1 cotización con PDF para que
                     el usuario pueda elegir.
                 </div>
                 <div class="approval-btns">
@@ -304,7 +304,7 @@ else
                             </span>
                         </div>
                     }
-                    <InfoRow Label="Tipo Operación" Value="@_request.OperationType.ToString()" />
+                    <InfoRow Label="Tipo Operación" Value="@(_request.OperationType?.ToString() ?? "Pendiente — lo asigna Trade Staff")" />
                 </div>
             </div>
 
@@ -578,6 +578,7 @@ else
     private bool _financeEmailOk = false;
     private string _financeEmailMsg = string.Empty;
     private bool _isFinanceManagerForRequest = false;
+    private bool _isTradeStaff = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -598,6 +599,10 @@ else
                                           StringComparison.OrdinalIgnoreCase))
                 .OrderBy(s => s.StepOrder)
                 .FirstOrDefault();
+
+            // Subir IGI/cotizaciones ocurre antes de la cadena formal: lo puede hacer
+            // cualquier persona con el rol Trade Staff, no solo la del paso 6.
+            _isTradeStaff = await PermissionService.UserHasRoleAsync(_currentUserEmail, "Trade Staff");
 
             _isFinanceManagerForRequest = _request.ApprovalSteps.Any(s =>
                 s.RoleName == "Finance Manager" &&

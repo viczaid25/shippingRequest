@@ -1,0 +1,100 @@
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject ICustomerCatalogService CustomerCatalogService
+
+<div class="mo-form-group">
+    <label class="mo-form-label">@Label</label>
+    <input type="text" class="mo-form-control"
+           placeholder="Busca por nombre, código, RFC o ciudad..."
+           value="@_query"
+           @onfocus="() => _open = true"
+           @onblur="() => _open = false"
+           @oninput="OnInput" />
+
+    @if (_open)
+    {
+        var matches = Filter().Take(30).ToList();
+        <div style="max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;
+                    border-radius:12px;margin-top:0.35rem;background:#fff;">
+            @if (matches.Count == 0)
+            {
+                <div style="padding:0.75rem;text-align:center;color:#94a3b8;font-size:0.82rem;">
+                    Sin coincidencias — captura los datos manualmente abajo
+                </div>
+            }
+            @foreach (var c in matches)
+            {
+                <div style="display:flex;flex-direction:column;padding:0.55rem 0.85rem;
+                            cursor:pointer;border-bottom:1px solid #f1f5f9;"
+                     @onmousedown="() => Select(c)">
+                    <span style="font-weight:700;color:#0f172a;font-size:0.85rem;">
+                        @c.BusinessName
+                        @if (!string.IsNullOrEmpty(c.CustomerCode))
+                        {
+                            <span style="color:#64748b;font-weight:600;"> · @c.CustomerCode</span>
+                        }
+                    </span>
+                    <span style="font-size:0.75rem;color:#64748b;">
+                        @(string.Join(" · ", new[] { c.City, c.State, c.Country }
+                            .Where(s => !string.IsNullOrWhiteSpace(s))))
+                        @if (!string.IsNullOrEmpty(c.Currency))
+                        {
+                            <span> · @c.Currency</span>
+                        }
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    @if (_selected is not null)
+    {
+        <div class="mo-form-hint" style="margin-top:0.35rem;">
+            Del catálogo: <strong>@_selected.BusinessName</strong>
+            @if (!string.IsNullOrEmpty(_selected.Currency))
+            {
+                <span> · Moneda @_selected.Currency</span>
+            }
+            — puedes ajustar los campos abajo si hace falta.
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Buscar en catálogo de clientes";
+    [Parameter] public EventCallback<CustomerCatalog> OnSelected { get; set; }
+
+    private List<CustomerCatalog> _all = new();
+    private CustomerCatalog? _selected;
+    private string _query = string.Empty;
+    private bool _open;
+
+    protected override async Task OnInitializedAsync()
+        => _all = await CustomerCatalogService.GetAllActiveAsync();
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? string.Empty;
+        _open = true;
+    }
+
+    private IEnumerable<CustomerCatalog> Filter()
+    {
+        var q = _query.Trim();
+        if (q.Length == 0) return _all;
+        return _all.Where(c =>
+            Contains(c.BusinessName, q) || Contains(c.CustomerCode, q) ||
+            Contains(c.TaxId, q) || Contains(c.City, q) || Contains(c.Country, q));
+    }
+
+    private static bool Contains(string? value, string q)
+        => value?.Contains(q, StringComparison.OrdinalIgnoreCase) == true;
+
+    private async Task Select(CustomerCatalog c)
+    {
+        _selected = c;
+        _query = c.BusinessName;
+        _open = false;
+        await OnSelected.InvokeAsync(c);
+    }
+}

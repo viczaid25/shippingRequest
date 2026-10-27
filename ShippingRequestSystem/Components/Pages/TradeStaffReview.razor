@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IShippingRequestService RequestService
 @inject IQuoteService QuoteService
+@inject IPermissionService PermissionService
 @inject FileService FileService
 @inject CurrentUserService CurrentUser
 @inject NavigationManager Nav
@@ -111,14 +112,20 @@ else
                     </div>
                 </div>
                 <div class="mo-form-group" style="max-width:280px;">
-                    <label class="mo-form-label">Tipo de Operación</label>
+                    <label class="mo-form-label">
+                        Tipo de Operación <span style="color:#ef4444;">*</span>
+                    </label>
                     <div class="radio-group">
                         @foreach (var op in Enum.GetValues<OperationType>())
                         {
                             <span class="radio-chip @(_operationType == op ? "selected" : "")"
-                                  @onclick="() => _operationType = op">@op</span>
+                                  @onclick="() => { _operationType = op; _operationTypeError = false; }">@op</span>
                         }
                     </div>
+                    @if (_operationTypeError)
+                    {
+                        <span class="mo-form-error">Debes seleccionar el Tipo de Operación</span>
+                    }
                 </div>
             </div>
         </div>
@@ -186,7 +193,7 @@ else
             <div class="info-card-header">
                 <h3 class="info-card-title">Cotizaciones de Envío</h3>
                 <span style="font-size:0.82rem;color:#64748b;margin-left:auto;">
-                    Mínimo 3 · cada una requiere su PDF
+                    Mínimo 1 · máximo 5 · cada una requiere su PDF
                 </span>
             </div>
             <div class="info-card-body">
@@ -205,7 +212,7 @@ else
                                 <span style="font-weight:800;font-size:0.88rem;color:#0f172a;">
                                     Cotización @(idx + 1)
                                 </span>
-                                @if (_quotes.Count > 3)
+                                @if (_quotes.Count > 1)
                                 {
                                     <button type="button" class="mo-btn mo-btn-danger-outline mo-btn-sm"
                                             @onclick="() => RemoveQuote(idx)">
@@ -357,7 +364,8 @@ else
     private string _errorMsg = string.Empty;
     private decimal _igi = 0;
     private string _incoterm = string.Empty;
-    private OperationType _operationType = OperationType.A1;
+    private OperationType? _operationType = null;
+    private bool _operationTypeError = false;
     private List<QuoteViewModel> _quotes = new();
 
     private bool _hasCoo = false;
@@ -373,14 +381,16 @@ else
 
         if (_request is not null)
         {
-            _isAuthorized = _request.ApprovalSteps.Any(s =>
-                s.RoleName == "Trade Staff" &&
-                string.Equals(s.ApproverEmail, CurrentUser.Email,
-                              StringComparison.OrdinalIgnoreCase));
+            // Cualquier persona con el rol Trade Staff (/admin/permissions) puede
+            // capturar IGI y cotizaciones, no solo quien ocupa el paso formal.
+            _isAuthorized = await PermissionService.UserHasRoleAsync(CurrentUser.Email, "Trade Staff");
 
             _igi = _request.IgiPercentage;
             _incoterm = _request.Incoterm ?? string.Empty;
-            _operationType = _request.OperationType;
+            // Vacío hasta que Trade Staff lo elija; si ya se capturó antes (la solicitud
+            // ya pasó de esta etapa) se muestra el valor guardado.
+            _operationType = _request.Status == RequestStatus.PendingTradeStaffQuotes
+                ? null : _request.OperationType;
             _hasCoo = _request.HasCOO;
             _cooSavedFilePath = _request.CooDocumentPath;
             _cooHasFile = !string.IsNullOrEmpty(_cooSavedFilePath);
@@ -410,8 +420,6 @@ else
     {
         _quotes = new List<QuoteViewModel>
         {
-            new QuoteViewModel(),
-            new QuoteViewModel(),
             new QuoteViewModel()
         };
     }
@@ -420,7 +428,7 @@ else
 
     private void RemoveQuote(int idx)
     {
-        if (_quotes.Count > 3)
+        if (_quotes.Count > 1)
             _quotes.RemoveAt(idx);
     }
 
@@ -521,6 +529,7 @@ else
         _errorMsg = string.Empty;
         _igiError = false;
         _incotermError = false;
+        _operationTypeError = false;
         bool hasErrors = false;
 
         // Validar IGI
@@ -537,6 +546,13 @@ else
             hasErrors = true;
         }
 
+        // Validar Tipo de Operación
+        if (_operationType is null)
+        {
+            _operationTypeError = true;
+            hasErrors = true;
+        }
+
         // Validar documento COO si se marcó como requerido
         _cooError = null;
         if (_hasCoo && _cooFile is null && string.IsNullOrEmpty(_cooSavedFilePath))
@@ -545,10 +561,10 @@ else
             hasErrors = true;
         }
 
-        // Validar mínimo 3 cotizaciones
-        if (_quotes.Count < 3)
+        // Validar mínimo 1 cotización (con cuenta de cliente/proveedor basta una)
+        if (_quotes.Count < 1)
         {
-            _errorMsg = "Se requieren mínimo 3 cotizaciones.";
+            _errorMsg = "Se requiere al menos 1 cotización.";
             return;
         }
 
@@ -597,7 +613,7 @@ else
             }).ToList();
 
             await QuoteService.SaveIgiAndQuotesAsync(
-                Id, _igi, _incoterm, _operationType, _hasCoo, _cooSavedFilePath, quotesToSave);
+                Id, _igi, _incoterm, _operationType!.Value, _hasCoo, _cooSavedFilePath, quotesToSave);
             Nav.NavigateTo($"requests/{Id}");
         }
         catch (Exception ex)

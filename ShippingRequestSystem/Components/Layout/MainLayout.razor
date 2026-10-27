@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject CurrentUserService CurrentUser
+@inject IConfiguration Configuration
 
 <DevModeBanner />
 
@@ -8,19 +9,16 @@
     <button id="mo-hamburger" onclick="moToggleSidebar()" aria-label="Menú">
         <span></span><span></span><span></span>
     </button>
-    <a id="mo-logo" href="">
-        <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#1e3a8a,#2563eb);display:flex;align-items:center;justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
-            </svg>
-        </div>
-        <div>
-            <div id="mo-logo-text">ShipRequest</div>
+    <div id="mo-logo">
+        @* El logo lleva al portal Meax One (Hub:BaseUrl); el título lleva al inicio de esta app. *@
+        <a href="@MeaxOneUrl" title="Ir a Meax One" style="display:flex;">
+            <img id="mo-logo-img" src="images/logo.png" alt="Mitsubishi Electric" />
+        </a>
+        <a href="" style="text-decoration:none;">
+            <div id="mo-logo-text">Solicitudes de Envío</div>
             <div id="mo-logo-sub">Shipping Request System</div>
-        </div>
-    </a>
+        </a>
+    </div>
 
     <div class="mo-spacer"></div>
 
@@ -104,6 +102,8 @@
 </script>
 
 @code {
+    private string MeaxOneUrl => Configuration["Hub:BaseUrl"] ?? "";
+
     private string Initials =>
         CurrentUser.DisplayName.Length >= 2 ? CurrentUser.DisplayName[..2].ToUpper() : "?";
 }

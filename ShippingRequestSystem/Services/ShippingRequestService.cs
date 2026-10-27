@@ -154,7 +154,6 @@ public class ShippingRequestService : IShippingRequestService
         request.Incoterm = vm.Incoterm;
         // HasCOO / CooDocumentPath: los llena Trade Staff en su revisión, no se sobrescriben aquí.
         request.InvoiceNumber = vm.InvoiceNumber;
-        request.OperationType = vm.OperationType;
         request.IsStackable = vm.IsStackable;
         request.PaymentResponsibility = vm.PaymentResponsibility;
         request.ParcelAccount = vm.ParcelAccount;

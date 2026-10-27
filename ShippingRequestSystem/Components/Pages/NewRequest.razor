@@ -228,6 +228,9 @@
 @if (_step == 1)
 {
     <FormSection Title="Información del Comprador">
+        <FieldRow Full="true">
+            <CustomerPicker Label="Elegir del catálogo de clientes" OnSelected="SelectBuyerCustomer" />
+        </FieldRow>
         <FieldRow>
             <div class="mo-form-group">
                 <label class="mo-form-label">Razón Social</label>
@@ -252,6 +255,9 @@
 
     <FormSection Title="Recolección / Destinatario"
                  Subtitle="Datos de quien recibe el envío">
+        <FieldRow Full="true">
+            <CustomerPicker Label="Elegir del catálogo de clientes" OnSelected="SelectRecipientCustomer" />
+        </FieldRow>
         <FieldRow>
             <div class="mo-form-group">
                 <label class="mo-form-label">Razón Social <span class="required">*</span></label>
@@ -630,7 +636,7 @@
             <div style="font-weight:800;color:#1e3a8a;font-size:0.92rem;">IGI y Costo de Envío</div>
             <div style="font-size:0.84rem;color:#3b82f6;margin-top:0.2rem;">
                 El porcentaje de IGI y el costo del envío serán determinados por el equipo de
-                Trade Staff. Ellos subirán 3 cotizaciones para que puedas elegir la más conveniente.
+                Trade Staff. Ellos subirán las cotizaciones para que puedas elegir la más conveniente.
             </div>
         </div>
     </div>
@@ -843,6 +849,23 @@
     };
 
     private bool HasError(string field) => _errors.Contains(field);
+
+    // Autollenado desde el catálogo de clientes; los campos siguen siendo editables.
+    private void SelectBuyerCustomer(CustomerCatalog c)
+    {
+        _vm.BuyerBusinessName = c.BusinessName;
+        _vm.BuyerTaxId = c.TaxId;
+        _vm.BuyerAddress = c.FullAddress;
+    }
+
+    private void SelectRecipientCustomer(CustomerCatalog c)
+    {
+        _vm.RecipientBusinessName = c.BusinessName;
+        _vm.RecipientTaxId = c.TaxId;
+        _vm.RecipientAddress = c.FullAddress;
+        _errors.Remove("RecipientBusinessName");
+        _errors.Remove("RecipientAddress");
+    }
 
     private async Task OpenManagerDropdown()
     {

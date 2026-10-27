@@ -1,0 +1,264 @@
+@page "/admin/customers"
+@using ShippingRequestSystem.Models
+@using ShippingRequestSystem.Services
+@inject ICustomerCatalogService CustomerCatalogService
+@inject IPermissionService PermissionService
+@inject CurrentUserService CurrentUser
+@rendermode InteractiveServer
+
+<PageTitle>Catálogo de Clientes</PageTitle>
+
+@if (_loading)
+{
+    <div class="index-loading">
+        <div class="index-skeleton skeleton-card"></div>
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div class="empty-state compact">Acceso restringido.</div>
+}
+else
+{
+    <div class="index-page">
+
+        <div style="margin-bottom:0.75rem;">
+            <a href="admin" class="mo-btn mo-btn-secondary-outline mo-btn-sm">← Volver</a>
+        </div>
+        <div id="mo-banner">
+            <div class="mo-banner-orb mo-banner-orb-1"></div>
+            <div class="mo-banner-orb mo-banner-orb-2"></div>
+            <div id="mo-banner-content">
+                <div id="mo-banner-tag">Catálogo</div>
+                <div id="mo-banner-title">Clientes</div>
+                <div id="mo-banner-sub">
+                    Clientes y destinos disponibles para elegir al crear una solicitud de envío.
+                    Un cliente con varios domicilios se registra una vez por domicilio.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-head">
+                <div>
+                    <h2>Catálogo Actual</h2>
+                    <p class="panel-subtitle">@_customers.Count(c => c.IsActive) activos de @_customers.Count</p>
+                </div>
+                <button type="button" class="mo-btn mo-btn-primary-outline mo-btn-sm" @onclick="OpenNew">
+                    + Nuevo Cliente
+                </button>
+            </div>
+
+            <div class="mo-form-group" style="margin-bottom:0.75rem;">
+                <input type="text" class="mo-form-control"
+                       placeholder="Filtrar por nombre, código, RFC, ciudad o país..."
+                       @bind="_filter" @bind:event="oninput" />
+            </div>
+
+            @if (!Filtered().Any())
+            {
+                <div class="empty-state compact">Sin clientes que coincidan.</div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    @foreach (var c in Filtered())
+                    {
+                        <div style="display:flex;align-items:center;gap:1rem;
+                                    padding:0.75rem 1rem;border-radius:14px;
+                                    background:#f8fafc;border:1px solid #e2e8f0;
+                                    opacity:@(c.IsActive ? "1" : "0.55");">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:800;color:#0f172a;font-size:0.9rem;">
+                                    @c.BusinessName
+                                    @if (!string.IsNullOrEmpty(c.CustomerCode))
+                                    {
+                                        <span style="color:#64748b;font-weight:600;"> · @c.CustomerCode</span>
+                                    }
+                                    @if (!c.IsActive)
+                                    {
+                                        <span style="color:#94a3b8;font-weight:600;font-size:0.76rem;"> · inactivo</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.78rem;color:#64748b;">
+                                    @c.FullAddress
+                                </div>
+                                <div style="font-size:0.76rem;color:#94a3b8;">
+                                    @(string.IsNullOrEmpty(c.TaxId) ? "Sin RFC/Tax ID" : c.TaxId)
+                                    @if (!string.IsNullOrEmpty(c.Currency))
+                                    {
+                                        <span> · @c.Currency</span>
+                                    }
+                                </div>
+                            </div>
+                            <button type="button" class="mo-btn mo-btn-secondary-outline mo-btn-sm"
+                                    @onclick="() => OpenEdit(c)">
+                                Editar
+                            </button>
+                            <button type="button"
+                                    class="@("mo-btn mo-btn-sm " + (c.IsActive ? "mo-btn-danger-outline" : "mo-btn-success-outline"))"
+                                    @onclick="() => ToggleActive(c)">
+                                @(c.IsActive ? "Desactivar" : "Activar")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+@if (_editing is not null)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-box" style="max-width:640px;max-height:90vh;overflow-y:auto;"
+             @onclick:stopPropagation="true">
+            <div class="modal-title">@(_editing.Id == 0 ? "Nuevo Cliente" : "Editar Cliente")</div>
+
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:0.75rem;margin-top:0.75rem;">
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Código / ID</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.CustomerCode" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Razón Social <span class="required">*</span></label>
+                    <input type="text" class="mo-form-control" @bind="_editing.BusinessName" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">RFC / Tax ID</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.TaxId" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Calle y número</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.Street" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Colonia</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.Neighborhood" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Ciudad</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.City" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Estado</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.State" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Código Postal</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.PostalCode" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">País</label>
+                    <input type="text" class="mo-form-control" @bind="_editing.Country" @bind:event="oninput" />
+                </div>
+                <div class="mo-form-group">
+                    <label class="mo-form-label">Moneda</label>
+                    <select class="mo-form-select" @bind="_editing.Currency">
+                        <option value="">--</option>
+                        <option>USD</option>
+                        <option>MXN</option>
+                        <option>JPY</option>
+                        <option>EUR</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_modalError))
+            {
+                <div style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:#fef2f2;
+                            border:1px solid #fecaca;border-radius:10px;color:#dc2626;
+                            font-size:0.82rem;font-weight:700;">
+                    @_modalError
+                </div>
+            }
+
+            <div class="modal-actions">
+                <button type="button" class="mo-btn mo-btn-secondary" @onclick="CloseModal">Cancelar</button>
+                <button type="button" class="mo-btn mo-btn-success" disabled="@_saving" @onclick="Save">
+                    @(_saving ? "Guardando..." : "✓ Guardar")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _isAdmin = false;
+    private bool _saving = false;
+    private string _filter = string.Empty;
+    private string _modalError = string.Empty;
+    private List<CustomerCatalog> _customers = new();
+    private CustomerCatalog? _editing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await PermissionService.IsAdminAsync(CurrentUser.Email);
+        _customers = await CustomerCatalogService.GetAllAsync();
+        _loading = false;
+    }
+
+    private IEnumerable<CustomerCatalog> Filtered()
+    {
+        var q = _filter.Trim();
+        if (q.Length == 0) return _customers;
+        return _customers.Where(c =>
+            Has(c.BusinessName, q) || Has(c.CustomerCode, q) || Has(c.TaxId, q) ||
+            Has(c.City, q) || Has(c.Country, q));
+    }
+
+    private static bool Has(string? v, string q)
+        => v?.Contains(q, StringComparison.OrdinalIgnoreCase) == true;
+
+    private void OpenNew()
+    {
+        _modalError = string.Empty;
+        _editing = new CustomerCatalog { IsActive = true };
+    }
+
+    private void OpenEdit(CustomerCatalog c)
+    {
+        _modalError = string.Empty;
+        // Copia para no modificar la lista hasta guardar
+        _editing = new CustomerCatalog
+        {
+            Id = c.Id, CustomerCode = c.CustomerCode, BusinessName = c.BusinessName,
+            TaxId = c.TaxId, PostalCode = c.PostalCode, Street = c.Street,
+            Neighborhood = c.Neighborhood, City = c.City, State = c.State,
+            Country = c.Country, Currency = c.Currency, IsActive = c.IsActive
+        };
+    }
+
+    private void CloseModal() => _editing = null;
+
+    private async Task Save()
+    {
+        if (_editing is null) return;
+        if (string.IsNullOrWhiteSpace(_editing.BusinessName))
+        {
+            _modalError = "La razón social es requerida.";
+            return;
+        }
+
+        _saving = true;
+        _editing.BusinessName = _editing.BusinessName.Trim();
+
+        if (_editing.Id == 0)
+            await CustomerCatalogService.AddAsync(_editing);
+        else
+            await CustomerCatalogService.UpdateAsync(_editing);
+
+        _customers = await CustomerCatalogService.GetAllAsync();
+        _editing = null;
+        _saving = false;
+    }
+
+    private async Task ToggleActive(CustomerCatalog c)
+    {
+        c.IsActive = !c.IsActive;
+        await CustomerCatalogService.UpdateAsync(c);
+        _customers = await CustomerCatalogService.GetAllAsync();
+    }
+}
